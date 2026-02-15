@@ -1,12 +1,13 @@
-from django.shortcuts import redirect, render
-from .spotify_utils import get_spotify_oauth
-import spotipy, time
-from django.conf import settings
 from .models import SpotifyToken
-from django.contrib.auth import get_user_model, logout, login
+from .spotify_utils import get_spotify_oauth
+from django.conf import settings
+from django.contrib.auth import get_user_model, logout, login, authenticate
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.shortcuts import redirect, render
+import spotipy, time
 
-# Create your views here.
+
 User = get_user_model()
 
 def spotify_login(request):
@@ -32,6 +33,7 @@ def spotify_callback(request):
         username=spotify_id,
         defaults={
             "email": email or "",
+            "role": "user"  # all Spotify logins are 'user' by default
         }
     )
 
@@ -62,7 +64,6 @@ def spotify_profile(request):
 
     return JsonResponse(user)
 
-
 @login_required
 def home(request):
     return render(request, "home.html", {
@@ -81,3 +82,18 @@ def login_page(request):
     if request.user.is_authenticated:
         return redirect("home")
     return render(request, "login.html")
+
+def django_login(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect("home")
+        else:
+            messages.error(request, "Invalid username or password")
+            return redirect("login_page")
+    else:
+        return redirect("login_page")

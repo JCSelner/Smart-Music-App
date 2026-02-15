@@ -1,26 +1,19 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, User
 from django.conf import settings
 from django.db import models
 
 # Create your models here.
 
 class User(AbstractUser):
-    ROLE_CHOICES = (
-        ('user', 'Standard User'),
-        ('manager', 'Manager'),
-        ('admin', 'Administrator'),
-    )
+    USER_ROLE_CHOICES = [
+        ("user", "User"),
+        ("manager", "Manager"),
+        ("admin", "Admin"),
+    ]
+    role = models.CharField(max_length=20, choices=USER_ROLE_CHOICES, default="user")
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
-
-    def is_manager(self):
-        return self.role == 'manager'
-
-    def is_admin(self):
-        return self.role == 'admin'
-
-from django.contrib.auth.models import User
-from django.db import models
+    def __str__(self):
+        return f"{self.username} ({self.role})"
 
 # Links Spotify login to account rather than session
 

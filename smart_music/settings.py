@@ -33,6 +33,9 @@ ALLOWED_HOSTS = []
 # Authorize models
 AUTH_USER_MODEL = 'users.User'
 
+LOGIN_URL = "/"
+LOGIN_REDIRECT_URL = "/home/"
+
 
 # Spotify Settings
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")

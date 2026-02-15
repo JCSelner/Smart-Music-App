@@ -4,73 +4,62 @@
     <meta charset="UTF-8">
     <title>Login Page</title>
     {% load static %}
+    <style>
+        body {
+            background-image: url("{% static 'BG1.png' %}");
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .overlay {
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content {
+            background-color: black;
+            color: white;
+            text-align: center;
+            padding: 240px 160px;
+            border-radius: 15px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+        }
+
+        h1{
+            font-size: 50px;
+        }
+
+        .roundedButton{
+            border: none;
+            cursor: pointer;
+            border-radius: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s; background-color 0.2s;
+            padding: 20px 40px;
+            font-size: 30px;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #F4F4F4;
+        }
+
+        .roundedButton:hover{
+            background-color: #1DB954; /* Spotify green */
+            transform: scale(1.03);
+            color: white;
+        }
+    </style>
 </head>
-<style>
-    body {
-        background-image: url("{% static 'BG1.png' %}");
-        background-repeat: no-repeat;
-        background-size: cover;
-    }
-
-    .overlay {
-        height: 100vh;
-        width: 100vw;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    .content {
-        background-color: black;
-        color: white;
-        text-align: center;
-        padding: 240px 160px;
-        border-radius: 15px;
-        box-shadow: 0 0 25px rgba(0,0,0,0.8);
-    }
-
-    h1{
-        font-size: 50px;
-    }
-
-    label{
-        font-size: 25px;
-    }
-
-    input{
-        font-size : 25px;
-    }
-
-    .roundedButton{
-        border: none;
-        cursor: pointer;
-        border-radius: 25px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s; background-color 0.2s;
-        padding: 20px 40px;
-        font-size: 30px;
-        width: 100%;
-        margin-top 20px;
-        background-color: #F4F4F4;
-    }
-
-    .roundedButton:hover{
-        background-color: #3e8e41;
-        transform: scale(1.03);
-    }
-</style>
 <body>
 <div class="overlay">
     <div class="content">
-        <h1>Login</h1>
-        <br>
-        <label for="username">Username:  </label>
-        <input type="text" name="username" id="username" placeholder="Enter Username">
-        <br><br>
-        <label for="password">Password:  </label>
-        <input type="password" name="password" id="password" placeholder="Enter Password">
-        <br><br><br><br><br><br>
-        <button class="roundedButton">LOGIN</button>
+        <h1>Smart Music App</h1>
+        <p>Login with Spotify to continue</p>
+        <a href="{% url 'spotify_login' %}">
+            <button class="roundedButton">LOGIN WITH SPOTIFY</button>
+        </a>
     </div>
 </div>
 </body>

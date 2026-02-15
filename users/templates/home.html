@@ -4,12 +4,12 @@
     <title>Home</title>
 </head>
 <body>
-    <h1>Welcome {{ display_name }}</h1>
+    <h1>Welcome {{ display_name }}!</h1>
+    <p>Your role: {{ role }}</p>
 
     <form action="{% url 'spotify_logout' %}" method="post">
         {% csrf_token %}
-        <button type="submit">Logout</button>
+        <button type="submit" class="roundedButton">Logout</button>
     </form>
-
 </body>
 </html>

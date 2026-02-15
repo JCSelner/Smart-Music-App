@@ -70,8 +70,11 @@ def home(request):
     })
 
 def spotify_logout(request):
-    logout(request)
-    return redirect("spotify_login")
+    if request.method == "POST":
+        logout(request)
+        return redirect("login_page")  # back to login.html
+    else:
+        return redirect("home")  # prevent GET requests from logging out
 
 def login_page(request):
     # If already logged in, go home

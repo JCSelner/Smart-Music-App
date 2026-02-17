@@ -2,118 +2,71 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login Page</title>
+    <title>Login — Smart Music App</title>
     {% load static %}
-    <style>
-        body {
-            background-image: url("{% static 'BG1.png' %}");
-            background-repeat: no-repeat;
-            background-size: cover;
-        }
-
-        .overlay {
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .content {
-            background-color: black;
-            color: white;
-            text-align: center;
-            padding: 240px 160px;
-            border-radius: 15px;
-            box-shadow: 0 0 25px rgba(0,0,0,0.8);
-        }
-
-        h1{
-            font-size: 50px;
-        }
-
-        label{
-            font-size: 25px;
-        }
-
-        input{
-            font-size: 25px;
-            padding: 10px;
-            border-radius: 8px;
-            border: none;
-            width: 100%;
-        }
-
-        .roundedButton{
-            border: none;
-            cursor: pointer;
-            border-radius: 25px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, background-color 0.2s;
-            padding: 20px 40px;
-            font-size: 30px;
-            width: 100%;
-            margin-top: 20px;
-            background-color: #F4F4F4;
-        }
-
-        .roundedButton:hover{
-            background-color: #3e8e41;
-            transform: scale(1.03);
-            color: white;
-        }
-
-        .spotifyButton {
-            background-color: #1DB954;
-            color: white;
-            margin-bottom: 30px;
-        }
-
-        .spotifyButton:hover {
-            background-color: #1ed760;
-        }
-
-        .loginForm {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-    </style>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
-<div class="overlay">
-    <div class="content">
-        <h1>Smart Music App</h1>
-        <p>Login with Spotify or your account</p>
 
-        <!-- Spotify Login -->
-        <a href="{% url 'spotify_login' %}">
-            <button class="roundedButton spotifyButton">LOGIN WITH SPOTIFY</button>
-        </a>
+    <!-- Decorative rings -->
+    <div class="vinyl-ring"></div>
+    <div class="vinyl-ring"></div>
 
-        <br>
+    <div class="overlay">
 
-        <!-- Django Login -->
-        {% if messages %}
-            <ul>
-                {% for message in messages %}
-                    <li style="color: red;">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+        <!-- Left: Brand panel -->
+        <div class="brand-panel">
+            <p class="brand-eyebrow">Smart Music App</p>
+            <h1 class="brand-title">
+                Sound<br>
+                <span class="gradient-text">Reimagined.</span>
+            </h1>
+            <p class="brand-subtitle">
+                Discover, curate, and share music that moves you.
+                Powered by your taste, refined by intelligence.
+            </p>
+            <div class="waveform">
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span>
+            </div>
+        </div>
 
-        <form method="post" action="{% url 'django_login' %}" class="loginForm">
-            {% csrf_token %}
-            <label for="username">Username:</label>
-            <input type="text" name="username" id="username" placeholder="Enter Username" required>
+        <!-- Right: Login panel -->
+        <div class="content">
+            <h1>Welcome back</h1>
+            <p>Sign in to continue listening</p>
 
-            <label for="password">Password:</label>
-            <input type="password" name="password" id="password" placeholder="Enter Password" required>
+            <!-- Spotify Login -->
+            <a href="{% url 'spotify_login' %}">
+                <button class="roundedButton spotifyButton">Continue with Spotify</button>
+            </a>
 
-            <button type="submit" class="roundedButton">LOGIN</button>
-        </form>
+            <div class="divider">or</div>
+
+            <!-- Django Login -->
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <form method="post" action="{% url 'django_login' %}" class="loginForm">
+                {% csrf_token %}
+                <div>
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username" placeholder="Enter username" required>
+                </div>
+                <div>
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="roundedButton">Sign In</button>
+            </form>
+        </div>
+
     </div>
-</div>
 </body>
 </html>

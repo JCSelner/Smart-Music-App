@@ -3,9 +3,11 @@ from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
+from django.http import JsonResponse
 from .models import SpotifyToken
-from .spotify_utils import get_spotify_oauth
+from .spotify_utils import get_spotify_oauth, create_playlist_for_user
 import spotipy
+from spotipy.oauth2 import SpotifyOAuth
 
 User = get_user_model()
 
@@ -65,16 +67,6 @@ def spotify_callback(request):
     return redirect("home")
 
 
-# # Optional: show Spotify profile info (JSON)
-# def spotify_profile(request):
-#     token_info = request.session.get("spotify_token")
-#     if not token_info:
-#         return redirect("spotify_login")
-#     sp = spotipy.Spotify(auth=token_info["access_token"])
-#     user = sp.current_user()
-#     return JsonResponse(user)
-
-
 # Django login
 
 def django_login(request):
@@ -127,3 +119,38 @@ def login_page(request):
     if request.user.is_authenticated:
         return redirect("home")
     return render(request, "login.html")
+
+
+# Playlist Generation
+
+def generate_playlist(request):
+    sp_oauth = SpotifyOAuth(
+        client_id=settings.SPOTIFY_CLIENT_ID,
+        client_secret=settings.SPOTIFY_CLIENT_SECRET,
+        redirect_uri=settings.SPOTIFY_REDIRECT_URI,
+        scope="user-top-read playlist-modify-public playlist-modify-private"
+    )
+
+    token_info = sp_oauth.get_cached_token()
+
+    if not token_info:
+        return redirect("spotify_login")  
+
+    sp = spotipy.Spotify(auth=token_info["access_token"])
+    top_tracks = sp.current_user_top_tracks(limit=10)
+    track_uris = [track["uri"] for track in top_tracks["items"]]
+
+    user_id = sp.current_user()["id"]
+
+    playlist = sp.user_playlist_create(
+        user=user_id,
+        name="Smart Playlist",
+        public=False
+    )
+
+    sp.playlist_add_items(playlist["id"], track_uris)
+
+    return JsonResponse({
+        "message": "Playlist created!",
+        "url": playlist["external_urls"]["spotify"]
+    })

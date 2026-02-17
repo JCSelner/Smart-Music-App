@@ -62,3 +62,5 @@ class LoginPage(View):
         else:
             return redirect('Error_Page')
 
+"""Note: The actual implementation of AuthManager and the templates for LoginPage, DashboardPage, and ErrorPage a
+re assumed to be defined elsewhere in the project."""

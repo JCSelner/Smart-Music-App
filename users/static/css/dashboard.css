@@ -1,0 +1,552 @@
+/* ── dashboard.css ────────────────────────────────────────────
+   Extends login.css variables and reset. Import AFTER login.css.
+   ──────────────────────────────────────────────────────────── */
+
+/* Allow scrolling on inner pages */
+body {
+    overflow: auto;
+}
+
+/* ── App Shell (sidebar + main) ───────────────────────────── */
+.app-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    padding: 32px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-right: 1px solid var(--border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Logo */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    margin-bottom: 40px;
+}
+
+.logo-mark {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    display: block;
+    flex-shrink: 0;
+    position: relative;
+}
+
+/* mini waveform inside logo mark */
+.logo-mark::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='11' width='3' height='10' rx='1.5' fill='rgba(0,0,0,0.5)'/%3E%3Crect x='11' y='7' width='3' height='18' rx='1.5' fill='rgba(0,0,0,0.5)'/%3E%3Crect x='17' y='9' width='3' height='14' rx='1.5' fill='rgba(0,0,0,0.5)'/%3E%3Crect x='23' y='13' width='3' height='8' rx='1.5' fill='rgba(0,0,0,0.5)'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+}
+
+/* Nav items */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    text-decoration: none;
+    border: none;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background var(--transition), color var(--transition);
+}
+
+.nav-item svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.nav-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: rgba(0, 255, 178, 0.10);
+    color: var(--accent-1);
+    font-weight: 600;
+}
+
+.nav-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 4px;
+}
+
+.nav-logout {
+    color: var(--text-muted);
+}
+.nav-logout:hover {
+    background: rgba(255, 60, 172, 0.10);
+    color: var(--accent-2);
+}
+
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    margin-top: 16px;
+}
+
+/* ── Main Content ─────────────────────────────────────────── */
+.main-content {
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    max-width: 1100px;
+}
+
+/* ── Topbar ───────────────────────────────────────────────── */
+.topbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    animation: slideUp 0.6s 0.1s both;
+}
+
+.topbar-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent-1);
+    margin-bottom: 6px;
+}
+
+.topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 3vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+}
+
+/* Spotify badge */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.badge--connected {
+    background: rgba(29, 185, 84, 0.15);
+    border: 1px solid rgba(29, 185, 84, 0.30);
+    color: var(--spotify-green);
+}
+
+.badge--disconnected {
+    background: rgba(255, 60, 172, 0.10);
+    border: 1px solid rgba(255, 60, 172, 0.25);
+    color: var(--accent-2);
+    cursor: pointer;
+}
+.badge--disconnected:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(255, 60, 172, 0.25);
+}
+
+/* ── Stats Row ────────────────────────────────────────────── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    animation: slideUp 0.6s 0.2s both;
+}
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform var(--transition), border-color var(--transition);
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.stat-card__label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.stat-card__value {
+    font-family: 'Syne', sans-serif;
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, var(--text-primary), rgba(240,240,248,0.6));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-card__value--sm {
+    font-size: 26px;
+}
+
+.stat-card__sub {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Weather card extras */
+.weather-card {
+    border-color: rgba(0, 255, 178, 0.15);
+}
+
+.weather-main {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.weather-icon {
+    font-size: 36px;
+    line-height: 1;
+}
+
+.weather-temp {
+    font-family: 'Syne', sans-serif;
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--accent-1);
+    line-height: 1;
+}
+
+.weather-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.weather-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: rgba(0, 255, 178, 0.06);
+    border: 1px solid rgba(0, 255, 178, 0.12);
+    border-radius: 8px;
+    padding: 8px 12px;
+}
+.weather-hint strong {
+    color: var(--accent-1);
+}
+
+.dot {
+    opacity: 0.4;
+}
+
+/* ── Generate CTA Banner ──────────────────────────────────── */
+.generate-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 40px;
+    border-radius: var(--radius-card);
+    background:
+        linear-gradient(135deg, rgba(0,255,178,0.08) 0%, rgba(120,75,160,0.12) 50%, rgba(255,60,172,0.08) 100%);
+    border: 1px solid rgba(0, 255, 178, 0.15);
+    animation: slideUp 0.6s 0.3s both;
+    gap: 24px;
+}
+
+.generate-cta__text h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+}
+
+.generate-cta__text p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    white-space: nowrap;
+    padding: 16px 32px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+    color: var(--bg-base);
+    flex-shrink: 0;
+    text-decoration: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-btn);
+    transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 255, 178, 0.25);
+}
+.cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0, 255, 178, 0.40);
+    filter: brightness(1.07);
+}
+
+/* ── Recent Playlists ─────────────────────────────────────── */
+.recent-section {
+    animation: slideUp 0.6s 0.4s both;
+    padding-bottom: 48px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.section-link {
+    font-size: 13px;
+    color: var(--accent-1);
+    text-decoration: none;
+    transition: opacity var(--transition);
+}
+.section-link:hover {
+    opacity: 0.7;
+}
+
+.playlist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.playlist-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform var(--transition), border-color var(--transition);
+    backdrop-filter: blur(12px);
+}
+.playlist-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.playlist-card__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.playlist-card__mood-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.playlist-card__mood {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.playlist-card__date {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.playlist-card__name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.playlist-card__meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 6px;
+}
+
+.playlist-card__open {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--spotify-green);
+    text-decoration: none;
+    transition: opacity var(--transition);
+}
+.playlist-card__open:hover {
+    opacity: 0.75;
+}
+
+/* Empty state */
+.empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-card);
+    text-align: center;
+    gap: 8px;
+}
+.empty-state__icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+.empty-state p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .app-shell {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto;
+        flex-direction: row;
+        padding: 12px 16px;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        z-index: 100;
+    }
+    .sidebar-logo,
+    .sidebar-footer,
+    .nav-divider,
+    .nav-item span {
+        display: none;
+    }
+    .sidebar-nav {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+    .nav-item {
+        justify-content: center;
+        padding: 12px;
+    }
+    .main-content {
+        padding: 24px 20px 100px;
+    }
+    .generate-cta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .cta-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}

@@ -28,6 +28,7 @@ def get_weather_data(*,city=None, lat=None, lon=None, units="imperial"):
     wind = weather_data.get("wind", {})
 
     return {
+        "city": weather_data.get("name"),
         "temperature": data.get("temp"),
         "conditions": weather[0].get("description") if weather else None,
         "humidity": data.get("humidity"),

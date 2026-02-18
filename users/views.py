@@ -8,6 +8,7 @@ from .models import SpotifyToken
 from .spotify_utils import get_spotify_oauth, create_playlist_for_user
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from .weather_utils import get_weather_data
 
 User = get_user_model()
 
@@ -123,6 +124,25 @@ def dashboard(request):
         "weather_mood": "—",
         "recent_playlists": [],      # replace later with real queryset
     })
+
+ #Weather Info
+@login_required
+def get_weather(request):
+    city = request.GET.get("city")
+    lat = request.GET.get("lat")
+    lon = request.GET.get("lon")
+
+    if city:
+        weather = get_weather_data(city=city)
+    elif lat and lon:
+        weather = get_weather_data(lat=float(lat), lon=float(lon))
+    else:
+        return JsonResponse({"error": "City or coordinates required"}, status=400)
+    
+    if not weather:
+        return JsonResponse({"error": "Could not fetch weather data"}, status=500)
+
+    return JsonResponse(weather)
 
 
 def spotify_logout(request):

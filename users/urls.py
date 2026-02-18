@@ -9,4 +9,5 @@ urlpatterns = [
     path("spotify/callback/", views.spotify_callback, name="spotify_callback"),
     path("django-login/", views.django_login, name="django_login"),
     path("generate-playlist/", views.generate_playlist, name="generate_playlist"),
+    path("signup/", views.signup_page, name="signup_page"),
 ]

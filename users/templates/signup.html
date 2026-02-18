@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign Up — Smart Music App</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+  <div class="overlay">
+    <div class="content">
+      <h1>Create account</h1>
+
+      {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      <form method="post" action="{% url 'signup_page' %}" class="loginForm">
+        {% csrf_token %}
+
+        <div>
+          <label for="username">Username</label>
+          <input type="text" name="username" id="username" required>
+        </div>
+
+        <div>
+          <label for="email">Email </label>
+          <input type="email" name="email" id="email">
+        </div>
+
+        <div>
+          <label for="password1">Password</label>
+          <input type="password" name="password1" id="password1" required>
+        </div>
+
+        <div>
+          <label for="password2">Confirm Password</label>
+          <input type="password" name="password2" id="password2" required>
+        </div>
+
+        <button type="submit" class="roundedButton">Sign Up</button>
+      </form>
+
+      <p class="signup-text">
+        Have an account?
+        <a href="{% url 'login_page' %}">Sign in</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

@@ -154,3 +154,43 @@ def generate_playlist(request):
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"]
     })
+
+from django.contrib.auth import get_user_model, login
+from django.contrib import messages
+from django.shortcuts import render, redirect
+
+User = get_user_model()
+
+def signup_page(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password1 = request.POST.get("password1", "")
+        password2 = request.POST.get("password2", "")
+
+        if not username or not password1:
+            messages.error(request, "Username and password are required.")
+            return redirect("signup_page")
+
+        if password1 != password2:
+            messages.error(request, "Passwords do not match.")
+            return redirect("signup_page")
+
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Username already taken.")
+            return redirect("signup_page")
+
+        user = User.objects.create_user(username=username, email=email, password=password1)
+
+        # If your User model has role:
+        if hasattr(user, "role") and not user.role:
+            user.role = "user"
+            user.save()
+
+        login(request, user)
+        return redirect("home")
+
+    return render(request, "signup.html")

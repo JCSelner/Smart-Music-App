@@ -3,11 +3,16 @@ function setWeatherUI(data) {
     var meta = document.querySelector(".weather-meta");
     var icon = document.querySelector(".weather-icon");
     var hint = document.querySelector(".weather-hint");
+    var locationInput = document.querySelector("#location");
+    var pillLoc = document.querySelector(".weather-pill__loc");
+    var location = data.city || "—";
+    
+    if (locationInput) locationInput.value = location;
+    if (pillLoc) pillLoc.textContent = location;
 
     if (temp) temp.textContent = Math.round(data.temperature || 0) + "°";
     if (meta) {
         var condition = data.conditions || "—";
-        var location = data.city || "—";
         meta.innerHTML = "<span>" + condition + "</span><span class=\"dot\">·</span><span>" + location + "</span>";
     }
     if (icon) icon.textContent = weatherIconFromConditions(data.conditions);

@@ -65,15 +65,7 @@
                     <h1 class="topbar-title">Generate Playlist</h1>
                 </div>
 
-                <!-- Live weather pill -->
-                <div class="weather-pill">
-                    <span class="weather-pill__icon">{{ weather_icon }}</span>
-                    <span class="weather-pill__temp">{{ weather_temp }}°</span>
-                    <span class="weather-pill__sep">·</span>
-                    <span class="weather-pill__desc">{{ weather_condition }}</span>
-                    <span class="weather-pill__sep">·</span>
-                    <span class="weather-pill__loc">{{ weather_location }}</span>
-                </div>
+
             </header>
 
             <form method="post" action="{% url 'generate_playlist' %}" id="genForm">
@@ -171,9 +163,9 @@
                             <div class="gen-card__desc">Your environment shapes the vibe.</div>
 
                             <div class="context-weather">
-                                <div class="context-weather__icon">{{ weather_icon }}</div>
+                                <div class="weather-icon">{{ weather_icon }}</div>
                                 <div>
-                                    <div class="context-weather__temp">{{ weather_temp }}° · {{ weather_condition }}</div>
+                                    <div class="weather-temp">{{ weather_temp }}° · {{ weather_condition }}</div>
                                     <div class="context-weather__sub">Weather will influence your playlist's energy</div>
                                 </div>
                             </div>
@@ -321,5 +313,8 @@
             updateFill();
         });
     </script>
+
+    <script src="{% static 'js/weather.js' %}"></script>
+
 </body>
 </html>

@@ -18,7 +18,7 @@
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <span class="logo-mark"></span>
-                <span class="logo-text">Soniq</span>
+                <span class="logo-text">SMA</span>
             </div>
 
             <nav class="sidebar-nav">
@@ -260,7 +260,7 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                 Generate Playlist
                             </span>
-                            <span class="gen-btn__loading" hidden>
+                            <span class="gen-btn__loading">
                                 <span class="spin-ring"></span>
                                 Generating...
                             </span>
@@ -297,24 +297,29 @@
     </div>
 
     <script>
-        // Show loading state on submit
+        // ── Button loading state ───────────────────────────────
         document.getElementById('genForm').addEventListener('submit', function() {
             const btn = document.getElementById('genBtn');
-            btn.querySelector('.gen-btn__text').hidden = true;
-            btn.querySelector('.gen-btn__loading').hidden = false;
+            btn.querySelector('.gen-btn__text').style.display = 'none';
+            btn.querySelector('.gen-btn__loading').style.display = 'flex';
             btn.disabled = true;
         });
-
-        // Slider gradient fill tracking
+    
+        // ── Slider gradient fill ───────────────────────────────
         document.querySelectorAll('.styled-slider').forEach(slider => {
             function updateFill() {
                 const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-                slider.style.setProperty('--fill', pct + '%');
+                slider.style.background = `linear-gradient(
+                    to right,
+                    var(--accent-1) 0%,
+                    var(--accent-1) ${pct}%,
+                    rgba(255,255,255,0.10) ${pct}%,
+                    rgba(255,255,255,0.10) 100%
+                )`;
             }
             slider.addEventListener('input', updateFill);
             updateFill();
         });
     </script>
-
 </body>
 </html>

@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path("", views.login_page, name="login_page"),
@@ -14,5 +15,6 @@ urlpatterns = [
     path("django-login/", views.django_login, name="django_login"),
     path("generate-playlist/", views.generate_playlist, name="generate_playlist"),
     path("signup/", views.signup_page, name="signup_page"),
+    path("password-change/", views.password_change, name="password_change"),
     path("api/weather/", views.get_weather, name="get_weather"),
 ]

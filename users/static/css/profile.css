@@ -1,0 +1,78 @@
+.profile-card {
+    background: #1b1f2a;
+    padding: 3rem;
+    border-radius: 1rem;
+    box-shadow: 0 0 20px rgba(0, 255, 200, 0.1);
+    width: 90%;
+    max-width: 900px;
+    margin: 2rem auto;
+    min-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2rem;
+}
+
+.profile-title {
+    color: #00ffc3;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    animation: slideUp 0.6s 0.2s both;
+}
+
+.profile-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.profile-label {
+    color: #aaa;
+    font-weight: 500;
+}
+
+.profile-value {
+    color: #fff;
+    font-weight: 600;
+}
+
+.profile-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: linear-gradient(90deg, #00ffc3, #6c63ff);
+    color: #fff;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: bold;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    animation: slideUp 0.6s 0.2s both;
+}
+
+.profile-button:hover {
+    box-shadow: 0 0 15px rgba(108, 99, 255, 0.7);
+    transform: translateY(-2px);
+}
+
+.topbar-title {
+    color: #00ffc3;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.profile-card .badge {
+    margin-top: 0.5rem;
+    animation: slideUp 0.6s 0.1s both;
+}

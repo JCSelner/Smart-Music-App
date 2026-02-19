@@ -4,10 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from django.http import JsonResponse
+from django.urls import reverse
 from .models import SpotifyToken
 from .spotify_utils import get_spotify_oauth, create_playlist_for_user
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
+from django.contrib.auth import update_session_auth_hash
+from django.shortcuts import render, redirect
+from django.contrib.auth.forms import PasswordChangeForm
+
 from .weather_utils import get_weather_data
 
 User = get_user_model()
@@ -173,7 +178,45 @@ def preferences_page(request):
 
 @login_required
 def profile_page(request):
-    return render(request, "profile.html")
+    user = request.user
+    try:
+        spotify_token = SpotifyToken.objects.get(user=request.user)
+        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        spotify_user = sp.current_user()
+        display_name = spotify_user.get("display_name") or request.user.username
+        spotify_linked = True
+    except SpotifyToken.DoesNotExist:
+        display_name = request.user.username
+        spotify_linked = False
+
+    return render(request, "profile.html", {
+        "display_name": display_name,
+        "spotify_linked": spotify_linked,
+        "email": user.email,
+        "username": user.username,
+        "role": getattr(user, "role", "user"),
+        "spotify_connect_url": reverse("spotify_login"),
+        "spotify_disconnect_url": reverse("spotify_logout"),
+        "password_change_url": reverse("password_change"),
+    })
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()  # this hashes and updates the password
+            # Keeps the user logged in after password change
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(user=request.user)
+
+    return render(request, 'password_change.html', {'form': form})
+
 # Playlist Generation
 
 def generate_playlist(request):

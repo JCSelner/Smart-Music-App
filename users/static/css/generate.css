@@ -129,43 +129,71 @@
     text-align: center;
 }
 
-/* Custom range slider */
-.styled-slider {
+/* ---------- Unified slider (track + fill + thumb) ---------- */
+.styled-slider{
+    --track-h: 18px;       /* pill height */
+    --thumb: 22px;         /* knob size */
+    --pct: 50%;            /* updated by JS */
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 4px;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, 0.10);
+    height: var(--track-h);
+    border-radius: 999px;
+    background: transparent;
     outline: none;
     cursor: pointer;
     border: none;
+    padding: 0;
 }
 
-.styled-slider::-webkit-slider-thumb {
+/* WebKit track */
+.styled-slider::-webkit-slider-runnable-track{
+    height: var(--track-h);
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--accent-1) 0%,
+        var(--accent-1) var(--pct),
+        rgba(255,255,255,0.10) var(--pct),
+        rgba(255,255,255,0.10) 100%
+    );
+}
+
+/* WebKit thumb */
+.styled-slider::-webkit-slider-thumb{
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
+    width: var(--thumb);
+    height: var(--thumb);
     border-radius: 50%;
     background: var(--accent-1);
-    box-shadow: 0 0 0 3px rgba(0, 255, 178, 0.20), 0 2px 8px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: transform var(--transition), box-shadow var(--transition);
-}
-.styled-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 0 5px rgba(0, 255, 178, 0.25), 0 2px 8px rgba(0,0,0,0.4);
+    border: 3px solid rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 3px rgba(0, 255, 178, 0.22), 0 6px 16px rgba(0,0,0,0.35);
+    margin-top: calc((var(--track-h) - var(--thumb)) / 2);
 }
 
-.styled-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
+/* Firefox track */
+.styled-slider::-moz-range-track{
+    height: var(--track-h);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+}
+
+/* Firefox fill */
+.styled-slider::-moz-range-progress{
+    height: var(--track-h);
+    border-radius: 999px;
+    background: var(--accent-1);
+}
+
+/* Firefox thumb */
+.styled-slider::-moz-range-thumb{
+    width: var(--thumb);
+    height: var(--thumb);
     border-radius: 50%;
     background: var(--accent-1);
-    border: none;
-    box-shadow: 0 0 0 3px rgba(0, 255, 178, 0.20);
-    cursor: pointer;
+    border: 3px solid rgba(0,0,0,0.35);
+    box-shadow: 0 0 0 3px rgba(0, 255, 178, 0.22), 0 6px 16px rgba(0,0,0,0.35);
 }
 
 /* ── Activity Chips ───────────────────────────────────────── */

@@ -30,18 +30,18 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     <span>Generate</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="{% url 'playlists' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     <span>My Playlists</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="{% url 'preferences' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
                     <span>Preferences</span>
                 </a>
             </nav>
 
             <div class="sidebar-footer">
-                <a href="#" class="nav-item">
+                <a href="{% url 'profile' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span>Profile</span>
                 </a>
@@ -296,21 +296,35 @@
             btn.querySelector('.gen-btn__loading').style.display = 'flex';
             btn.disabled = true;
         });
-    
-        // ── Slider gradient fill ───────────────────────────────
-        document.querySelectorAll('.styled-slider').forEach(slider => {
-            function updateFill() {
-                const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
-                slider.style.background = `linear-gradient(
-                    to right,
-                    var(--accent-1) 0%,
-                    var(--accent-1) ${pct}%,
-                    rgba(255,255,255,0.10) ${pct}%,
-                    rgba(255,255,255,0.10) 100%
-                )`;
-            }
-            slider.addEventListener('input', updateFill);
-            updateFill();
+      
+        // ── Slider % + label sync ─────────
+        const pairs = [
+          ["energy", "energyVal"],
+          ["happiness", "happyVal"],
+          ["danceability", "danceVal"]
+        ];
+      
+        function setPct(slider){
+          const min = Number(slider.min);
+          const max = Number(slider.max);
+          const val = Number(slider.value);
+          const pct = ((val - min) / (max - min)) * 100;
+          slider.style.setProperty("--pct", pct + "%");
+        }
+      
+        pairs.forEach(([sliderId, valId]) => {
+          const slider = document.getElementById(sliderId);
+          const label  = document.getElementById(valId);
+      
+          // sync on load
+          label.textContent = slider.value;
+          setPct(slider);
+      
+          // sync on input
+          slider.addEventListener("input", () => {
+            label.textContent = slider.value;
+            setPct(slider);
+          });
         });
     </script>
 

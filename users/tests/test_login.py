@@ -2,23 +2,19 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from unittest.mock import patch, MagicMock
-
 from users.models import SpotifyToken
 
 User = get_user_model()
 
 
 class LoginTests(TestCase):
-
     def setUp(self):
-        # Create a regular Django user
         self.user = User.objects.create_user(
             username="testuser",
-            password="TestPass123",
-            email="test@example.com"
+            password="test1234",
+            email="test@example.com",
         )
-
-        # If your custom user has role field
+        
         if hasattr(self.user, "role"):
             self.user.role = "user"
             self.user.save()
@@ -30,7 +26,7 @@ class LoginTests(TestCase):
     def test_django_login_success(self):
         response = self.client.post(
             reverse("django_login"),
-            {"username": "testuser", "password": "TestPass123"}
+            {"username": "testuser", "password": "test1234"}
         )
         self.assertRedirects(response, reverse("dashboard"))
 

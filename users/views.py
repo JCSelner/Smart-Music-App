@@ -173,10 +173,6 @@ def playlists_page(request):
     return render(request, "playlists.html")
 
 @login_required
-def preferences_page(request):
-    return render(request, "preferences.html")
-
-@login_required
 def profile_page(request):
     user = request.user
     try:

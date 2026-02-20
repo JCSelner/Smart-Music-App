@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate — Smart Music App</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/generate.css' %}">
+</head>
+<body>
+
+    <div class="vinyl-ring"></div>
+    <div class="vinyl-ring"></div>
+
+    <div class="app-shell">
+        <!-- sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-mark"></span>
+                <span class="logo-text">SMA</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'generate' %}" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Generate</span>
+                </a>
+                <a href="{% url 'playlists' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span>My Playlists</span>
+                </a>
+                <a href="{% url 'preferences' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+                    <span>Preferences</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{% url 'profile' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Profile</span>
+                </a>
+                <form method="post" action="{% url 'spotify_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-item nav-logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ── Main ───────────────────────────────────────── -->
+        <main class="main-content gen-main">
+
+            <!-- Page header -->
+            <header class="gen-header">
+                <div>
+                    <p class="topbar-eyebrow">AI-Powered</p>
+                    <h1 class="topbar-title">Generate Playlist</h1>
+                </div>
+
+
+            </header>
+
+            <form method="post" action="{% url 'generate_playlist' %}" id="genForm">
+                {% csrf_token %}
+
+                <div class="gen-grid">
+
+                    <!-- ── LEFT COLUMN ──────────────────────── -->
+                    <div class="gen-col">
+
+                        <!-- Mood sliders -->
+                        <div class="gen-card" style="animation-delay: 0.1s">
+                            <div class="gen-card__title">
+                                <span class="gen-card__icon">🎭</span>
+                                Mood
+                            </div>
+                            <div class="gen-card__desc">Tune how your playlist feels.</div>
+
+                            <div class="slider-group">
+                                <div class="slider-row">
+                                    <div class="slider-labels">
+                                        <span>😴 Calm</span>
+                                        <span class="slider-val" id="energyVal">5</span>
+                                        <span>⚡ Energetic</span>
+                                    </div>
+                                    <input type="range" name="energy" id="energy"
+                                           min="1" max="10" value="5" class="styled-slider"
+                                           oninput="document.getElementById('energyVal').textContent=this.value">
+                                </div>
+
+                                <div class="slider-row">
+                                    <div class="slider-labels">
+                                        <span>😔 Melancholic</span>
+                                        <span class="slider-val" id="happyVal">5</span>
+                                        <span>😄 Happy</span>
+                                    </div>
+                                    <input type="range" name="happiness" id="happiness"
+                                           min="1" max="10" value="5" class="styled-slider"
+                                           oninput="document.getElementById('happyVal').textContent=this.value">
+                                </div>
+
+                                <div class="slider-row">
+                                    <div class="slider-labels">
+                                        <span>🧘 Focused</span>
+                                        <span class="slider-val" id="danceVal">5</span>
+                                        <span>🕺 Danceable</span>
+                                    </div>
+                                    <input type="range" name="danceability" id="danceability"
+                                           min="1" max="10" value="5" class="styled-slider"
+                                           oninput="document.getElementById('danceVal').textContent=this.value">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Activity -->
+                        <div class="gen-card" style="animation-delay: 0.2s">
+                            <div class="gen-card__title">
+                                <span class="gen-card__icon">🏃</span>
+                                Activity
+                            </div>
+                            <div class="gen-card__desc">What are you up to?</div>
+
+                            <div class="activity-grid">
+                                {% for activity in activities %}
+                                <label class="activity-chip">
+                                    <input type="radio" name="activity" value="{{ activity.value }}"
+                                           {% if forloop.first %}checked{% endif %}>
+                                    <span>{{ activity.icon }} {{ activity.label }}</span>
+                                </label>
+                                {% empty %}
+                                <!-- Fallback static options -->
+                                <label class="activity-chip"><input type="radio" name="activity" value="chill" checked><span>😌 Chill</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="workout"><span>💪 Workout</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="study"><span>📚 Study</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="party"><span>🎉 Party</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="commute"><span>🚆 Commute</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="sleep"><span>🌙 Wind Down</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="cooking"><span>🍳 Cooking</span></label>
+                                <label class="activity-chip"><input type="radio" name="activity" value="focus"><span>🎯 Deep Focus</span></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ── RIGHT COLUMN ─────────────────────── -->
+                    <div class="gen-col">
+
+                        <!-- Context card: weather + location -->
+                        <div class="gen-card gen-card--accent" style="animation-delay: 0.15s">
+                            <div class="gen-card__title">
+                                <span class="gen-card__icon">🌍</span>
+                                Context
+                            </div>
+                            <div class="gen-card__desc">Your environment shapes the vibe.</div>
+
+                            <div class="context-weather">
+                                <div class="weather-icon">{{ weather_icon }}</div>
+                                <div>
+                                    <div class="weather-temp">{{ weather_temp }}° · {{ weather_condition }}</div>
+                                    <div class="context-weather__sub">Weather will influence your playlist's energy</div>
+                                </div>
+                            </div>
+
+                            <div class="field-group">
+                                <label for="location">Location <span class="field-optional">(optional)</span></label>
+                                <div class="input-icon-wrap">
+                                    <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    <input type="text" name="location" id="location"
+                                           placeholder="{{ weather_location }}"
+                                           class="has-icon">
+                                </div>
+                            </div>
+
+                            <label class="toggle-row">
+                                <span class="toggle-label">
+                                    Use weather to shape playlist
+                                    <small>Pulls live data from OpenWeatherMap</small>
+                                </span>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" name="use_weather" id="use_weather" checked>
+                                    <span class="toggle-thumb"></span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Playlist settings -->
+                        <div class="gen-card" style="animation-delay: 0.25s">
+                            <div class="gen-card__title">
+                                <span class="gen-card__icon">⚙️</span>
+                                Playlist Settings
+                            </div>
+                            <div class="gen-card__desc">Fine-tune the output.</div>
+
+                            <div class="field-group">
+                                <label for="playlist_name">Playlist Name</label>
+                                <input type="text" name="playlist_name" id="playlist_name"
+                                       placeholder="My Smart Playlist" maxlength="100">
+                            </div>
+
+                            <div class="field-row">
+                                <div class="field-group">
+                                    <label for="track_count">Tracks</label>
+                                    <select name="track_count" id="track_count" class="styled-select">
+                                        <option value="10">10 tracks</option>
+                                        <option value="20" selected>20 tracks</option>
+                                        <option value="30">30 tracks</option>
+                                        <option value="50">50 tracks</option>
+                                    </select>
+                                </div>
+                                <div class="field-group">
+                                    <label for="visibility">Visibility</label>
+                                    <select name="visibility" id="visibility" class="styled-select">
+                                        <option value="private" selected>Private</option>
+                                        <option value="public">Public</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <label class="toggle-row">
+                                <span class="toggle-label">
+                                    Use my listening history
+                                    <small>Pulls from your Spotify top tracks</small>
+                                </span>
+                                <div class="toggle-switch">
+                                    <input type="checkbox" name="use_history" id="use_history"
+                                           {% if spotify_linked %}checked{% endif %}
+                                           {% if not spotify_linked %}disabled{% endif %}>
+                                    <span class="toggle-thumb {% if not spotify_linked %}toggle-thumb--disabled{% endif %}"></span>
+                                </div>
+                            </label>
+
+                            {% if not spotify_linked %}
+                            <div class="spotify-warning">
+                                <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                                Spotify not connected. <a href="{% url 'spotify_login' %}">Connect now</a> to use your listening history.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Generate button -->
+                        <button type="submit" class="gen-btn" id="genBtn">
+                            <span class="gen-btn__text">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                Generate Playlist
+                            </span>
+                            <span class="gen-btn__loading">
+                                <span class="spin-ring"></span>
+                                Generating...
+                            </span>
+                        </button>
+
+                    </div>
+                </div>
+
+                <!-- ── Result area (shown after POST if playlist returned) -->
+                {% if result %}
+                <div class="result-card">
+                    <div class="result-card__check">✓</div>
+                    <div class="result-card__body">
+                        <div class="result-card__title">{{ result.name }}</div>
+                        <div class="result-card__meta">{{ result.track_count }} tracks · {{ result.mood_summary }}</div>
+                    </div>
+                    <a href="{{ result.spotify_url }}" target="_blank" class="result-card__btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                        Open in Spotify
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if messages %}
+                <div class="gen-messages">
+                    {% for message in messages %}
+                    <div class="gen-message gen-message--{{ message.tags }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+            </form>
+        </main>
+    </div>
+
+    <script>
+        // ── Button loading state ───────────────────────────────
+        document.getElementById('genForm').addEventListener('submit', function() {
+            const btn = document.getElementById('genBtn');
+            btn.querySelector('.gen-btn__text').style.display = 'none';
+            btn.querySelector('.gen-btn__loading').style.display = 'flex';
+            btn.disabled = true;
+        });
+      
+        // ── Slider % + label sync ─────────
+        const pairs = [
+          ["energy", "energyVal"],
+          ["happiness", "happyVal"],
+          ["danceability", "danceVal"]
+        ];
+      
+        function setPct(slider){
+          const min = Number(slider.min);
+          const max = Number(slider.max);
+          const val = Number(slider.value);
+          const pct = ((val - min) / (max - min)) * 100;
+          slider.style.setProperty("--pct", pct + "%");
+        }
+      
+        pairs.forEach(([sliderId, valId]) => {
+          const slider = document.getElementById(sliderId);
+          const label  = document.getElementById(valId);
+      
+          // sync on load
+          label.textContent = slider.value;
+          setPct(slider);
+      
+          // sync on input
+          slider.addEventListener("input", () => {
+            label.textContent = slider.value;
+            setPct(slider);
+          });
+        });
+    </script>
+
+    <script src="{% static 'js/weather.js' %}"></script>
+
+</body>
+</html>

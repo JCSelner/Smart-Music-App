@@ -32,7 +32,7 @@ class LoginTests(TestCase):
             reverse("django_login"),
             {"username": "testuser", "password": "TestPass123"}
         )
-        self.assertRedirects(response, reverse("home"))
+        self.assertRedirects(response, reverse("dashboard"))
 
     def test_django_login_failure(self):
         response = self.client.post(
@@ -83,7 +83,7 @@ class LoginTests(TestCase):
             {"code": "fakecode"}
         )
 
-        self.assertRedirects(response, reverse("home"))
+        self.assertRedirects(response, reverse("dashboard"))
 
         # Confirm user created
         user = User.objects.get(username="spotifyuser")

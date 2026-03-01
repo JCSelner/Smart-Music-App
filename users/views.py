@@ -166,7 +166,19 @@ def login_page(request):
 
 @login_required
 def generate_page(request):
-    return render(request, "generate.html")
+    try:
+        spotify_token = SpotifyToken.objects.get(user=request.user)
+        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        display_name = sp.current_user().get("display_name") or request.user.username
+        spotify_linked = True
+    except SpotifyToken.DoesNotExist:
+        display_name = request.user.username
+        spotify_linked = False
+
+    return render(request, "generate.html", {
+        "spotify_linked": spotify_linked,
+        "display_name": display_name,
+    })
 
 @login_required
 def playlists_page(request):
@@ -246,12 +258,7 @@ def generate_playlist(request):
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"]
     })
-
-from django.contrib.auth import get_user_model, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
-
-User = get_user_model()
+    
 
 def signup_page(request):
     if request.user.is_authenticated:

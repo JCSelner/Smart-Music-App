@@ -1,0 +1,19 @@
+# Secrets - CRITICAL
+.env
+.cache
+
+# Database
+db.sqlite3
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+.vscode/
+
+# Django
+*.log
+local_settings.py

@@ -194,6 +194,7 @@ def profile_page(request):
         "spotify_connect_url": reverse("spotify_login"),
         "spotify_disconnect_url": reverse("spotify_logout"),
         "password_change_url": reverse("password_change"),
+        "delete_account_url": reverse("delete_account"),
     })
 
 @login_required
@@ -212,6 +213,16 @@ def password_change(request):
         form = PasswordChangeForm(user=request.user)
 
     return render(request, 'password_change.html', {'form': form})
+
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+        logout(request)
+        user.delete()
+        messages.success(request, 'Your account was successfully deleted!')
+        return redirect('login_page')
+    return render(request, 'delete_account.html')
 
 # Playlist Generation
 

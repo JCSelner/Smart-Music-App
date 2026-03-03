@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account deletion confirmation</title>
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+</head>
+<body>
+
+<div class="vinyl-ring"></div>
+<div class="vinyl-ring"></div>
+<div class="center-wrapper">
+    <div class="profile-card delete-card">
+        <h2 class="delete-title">Delete Account</h2>
+        <p class="delete-text">
+            Are you sure you want to permanently delete your account?
+            This action cannot be undone.
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="roundedButton delete-button">Yes, Delete My Account</button>
+        </form>
+
+        <a href="{% url 'profile' %}" class="roundedButton cancel-button">Cancel</a>
+    </div>
+</div>
+</body>
+</html>

@@ -11,7 +11,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import PasswordChangeForm
 
-from .weather_utils import get_weather_data
+from .weather_utils import get_weather_data, map_weather_to_mood
 
 User = get_user_model()
 
@@ -236,6 +236,21 @@ def generate_playlist(request):
     playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
 
     sp.playlist_add_items(playlist["id"], track_uris)
+
+    use_weather = request.POST.get("use_weather") == "on"
+    
+    if use_weather:
+        lat = request.POST.get("lat")
+        lon = request.POST.get("lon")
+        location = request.POST.get("location")
+        
+        if location:
+            weather = get_weather_data(city=location)
+        elif lat and lon:
+            weather = get_weather_data(lat=float(lat), lon=float(lon))
+        
+        if weather:
+            weather_features = map_weather_to_mood(weather)
 
     return JsonResponse({
         "message": "Playlist created!",

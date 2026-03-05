@@ -2,13 +2,11 @@ from django.shortcuts import redirect, render
 from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from .models import SpotifyToken
-from .spotify_utils import get_spotify_oauth, create_playlist_for_user
+from .spotify_utils import get_spotify_oauth, get_valid_spotify_client, create_playlist_for_user
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import PasswordChangeForm
@@ -35,7 +33,7 @@ def spotify_callback(request):
         messages.error(request, "Spotify login failed")
         return redirect("login_page")
 
-    token_info = sp_oauth.get_access_token(code)
+    token_info = sp_oauth.get_access_token(code, check_cache=False)
     sp = spotipy.Spotify(auth=token_info["access_token"])
     spotify_user = sp.current_user()
 
@@ -97,8 +95,7 @@ def django_login(request):
 @login_required
 def dashboard(request):
     try:
-        spotify_token = SpotifyToken.objects.get(user=request.user)
-        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
@@ -176,8 +173,7 @@ def playlists_page(request):
 def profile_page(request):
     user = request.user
     try:
-        spotify_token = SpotifyToken.objects.get(user=request.user)
-        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
@@ -226,30 +222,18 @@ def delete_account(request):
 
 # Playlist Generation
 
+@login_required
 def generate_playlist(request):
-    sp_oauth = SpotifyOAuth(
-        client_id=settings.SPOTIFY_CLIENT_ID,
-        client_secret=settings.SPOTIFY_CLIENT_SECRET,
-        redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-        scope="user-top-read playlist-modify-public playlist-modify-private"
-    )
-
-    token_info = sp_oauth.get_cached_token()
-
-    if not token_info:
-        return redirect("spotify_login")  
-
-    sp = spotipy.Spotify(auth=token_info["access_token"])
+    try:
+        sp = get_valid_spotify_client(request.user)
+    except SpotifyToken.DoesNotExist:
+        return redirect("spotify_login")
+    assert sp is not None
     top_tracks = sp.current_user_top_tracks(limit=10)
+    assert top_tracks is not None
     track_uris = [track["uri"] for track in top_tracks["items"]]
 
-    user_id = sp.current_user()["id"]
-
-    playlist = sp.user_playlist_create(
-        user=user_id,
-        name="Smart Playlist",
-        public=False
-    )
+    playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
 
     sp.playlist_add_items(playlist["id"], track_uris)
 

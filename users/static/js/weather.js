@@ -50,13 +50,7 @@ function loadWeather() {
             .then(function(data) { setWeatherUI(data); })
             .catch(function() {});
     }, function() {
-        var city = prompt("Enter city:");
-        if (!city) return;
-
-        fetch("/api/weather/?city=" + city)
-            .then(function(r) { return r.json(); })
-            .then(function(data) { setWeatherUI(data); })
-            .catch(function() {});
+        // Geolocation denied — user can type their city in the location field
     });
 }
 

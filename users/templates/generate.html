@@ -66,6 +66,8 @@
 
             <form method="post" action="{% url 'generate_playlist' %}" id="genForm">
                 {% csrf_token %}
+                <input type="hidden" name="lat" id="lat">
+                <input type="hidden" name="lon" id="lon">
 
                 <div class="gen-grid">
 
@@ -161,7 +163,7 @@
                             <div class="context-weather">
                                 <div class="weather-icon">{{ weather_icon }}</div>
                                 <div>
-                                    <div class="weather-temp">{{ weather_temp }}° · {{ weather_condition }}</div>
+                                    <div class="weather-temp">{{ weather_temp }}°</div>
                                     <div class="context-weather__sub">Weather will influence your playlist's energy</div>
                                 </div>
                             </div>
@@ -324,7 +326,7 @@
         });
     </script>
 
-    <script src="{% static 'js/weather.js' %}"></script>
+    <script src="{% static 'js/weather.js' %}?v=20260304"></script>
 
 </body>
 </html>

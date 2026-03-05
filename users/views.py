@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from .models import SpotifyToken
-from .spotify_utils import get_spotify_oauth, get_valid_spotify_client, create_playlist_for_user
+from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 import spotipy
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect

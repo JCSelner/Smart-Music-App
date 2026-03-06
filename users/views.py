@@ -238,21 +238,21 @@ def generate_playlist(request):
 
     playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
     assert playlist is not None
-    
+
     sp.playlist_add_items(playlist["id"], track_uris)
 
     use_weather = request.POST.get("use_weather") == "on"
-    
+
     if use_weather:
         lat = request.POST.get("lat")
         lon = request.POST.get("lon")
         location = request.POST.get("location")
-        
+
         if location:
             weather = get_weather_data(city=location)
         elif lat and lon:
             weather = get_weather_data(lat=float(lat), lon=float(lon))
-        
+
         if weather:
             weather_features = map_weather_to_mood(weather)
 

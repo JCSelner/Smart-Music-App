@@ -247,7 +247,9 @@ def generate_playlist(request):
         if not track_uris:
             return JsonResponse({"error": "No top tracks found."}, status=400)
 
-    playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
+    playlist_name = request.POST.get("playlist_name", "").strip() or "My Smart Playlist"
+    visibility = request.POST.get("visibility", "private")
+    playlist = sp._post("me/playlists", payload={"name": playlist_name, "public": visibility == "public"})
     assert playlist is not None
 
     if track_uris:

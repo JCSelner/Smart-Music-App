@@ -1,5 +1,6 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth import get_user_model, login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate
+from users.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
@@ -12,9 +13,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.forms import PasswordChangeForm
 
 from .weather_utils import get_weather_data, map_weather_to_mood
-
-User = get_user_model()
-
 
 # Spotify OAuth
 
@@ -36,6 +34,7 @@ def spotify_callback(request):
     token_info = sp_oauth.get_access_token(code, check_cache=False)
     sp = spotipy.Spotify(auth=token_info["access_token"])
     spotify_user = sp.current_user()
+    assert spotify_user is not None
 
     spotify_id = spotify_user.get("id")
     display_name = spotify_user.get("display_name") or spotify_id
@@ -97,6 +96,8 @@ def dashboard(request):
     try:
         sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
+        assert spotify_user is not None
+
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
     except SpotifyToken.DoesNotExist:
@@ -175,6 +176,8 @@ def profile_page(request):
     try:
         sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
+        assert spotify_user is not None
+
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
     except SpotifyToken.DoesNotExist:
@@ -234,7 +237,8 @@ def generate_playlist(request):
     track_uris = [track["uri"] for track in top_tracks["items"]]
 
     playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
-
+    assert playlist is not None
+    
     sp.playlist_add_items(playlist["id"], track_uris)
 
     use_weather = request.POST.get("use_weather") == "on"
@@ -256,12 +260,6 @@ def generate_playlist(request):
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"]
     })
-
-from django.contrib.auth import get_user_model, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
-
-User = get_user_model()
 
 def signup_page(request):
     if request.user.is_authenticated:

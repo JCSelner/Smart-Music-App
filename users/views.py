@@ -2,18 +2,16 @@ from django.shortcuts import redirect, render
 from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
 from .models import SpotifyToken
-from .spotify_utils import get_spotify_oauth, create_playlist_for_user
+from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import PasswordChangeForm
 
-from .weather_utils import get_weather_data
+from .weather_utils import get_weather_data, map_weather_to_mood
 
 User = get_user_model()
 
@@ -35,7 +33,7 @@ def spotify_callback(request):
         messages.error(request, "Spotify login failed")
         return redirect("login_page")
 
-    token_info = sp_oauth.get_access_token(code)
+    token_info = sp_oauth.get_access_token(code, check_cache=False)
     sp = spotipy.Spotify(auth=token_info["access_token"])
     spotify_user = sp.current_user()
 
@@ -97,8 +95,7 @@ def django_login(request):
 @login_required
 def dashboard(request):
     try:
-        spotify_token = SpotifyToken.objects.get(user=request.user)
-        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
@@ -173,15 +170,10 @@ def playlists_page(request):
     return render(request, "playlists.html")
 
 @login_required
-def preferences_page(request):
-    return render(request, "preferences.html")
-
-@login_required
 def profile_page(request):
     user = request.user
     try:
-        spotify_token = SpotifyToken.objects.get(user=request.user)
-        sp = spotipy.Spotify(auth=spotify_token.access_token)
+        sp = get_valid_spotify_client(request.user)
         spotify_user = sp.current_user()
         display_name = spotify_user.get("display_name") or request.user.username
         spotify_linked = True
@@ -198,6 +190,7 @@ def profile_page(request):
         "spotify_connect_url": reverse("spotify_login"),
         "spotify_disconnect_url": reverse("spotify_logout"),
         "password_change_url": reverse("password_change"),
+        "delete_account_url": reverse("delete_account"),
     })
 
 @login_required
@@ -217,45 +210,67 @@ def password_change(request):
 
     return render(request, 'password_change.html', {'form': form})
 
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+        logout(request)
+        user.delete()
+        messages.success(request, 'Your account was successfully deleted!')
+        return redirect('login_page')
+    return render(request, 'delete_account.html')
+
 # Playlist Generation
 
+@login_required
 def generate_playlist(request):
-    sp_oauth = SpotifyOAuth(
-        client_id=settings.SPOTIFY_CLIENT_ID,
-        client_secret=settings.SPOTIFY_CLIENT_SECRET,
-        redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-        scope="user-top-read playlist-modify-public playlist-modify-private"
-    )
+    try:
+        sp = get_valid_spotify_client(request.user)
+    except SpotifyToken.DoesNotExist:
+        return redirect("spotify_login")
 
-    token_info = sp_oauth.get_cached_token()
+    assert sp is not None
 
-    if not token_info:
-        return redirect("spotify_login")  
 
-    sp = spotipy.Spotify(auth=token_info["access_token"])
-    top_tracks = sp.current_user_top_tracks(limit=10)
-    track_uris = [track["uri"] for track in top_tracks["items"]]
+    use_history = request.POST.get("use_history") == "on"
 
-    user_id = sp.current_user()["id"]
+    track_uris = []
 
-    playlist = sp.user_playlist_create(
-        user=user_id,
-        name="Smart Playlist",
-        public=False
-    )
+    if use_history:
+        top_tracks = sp.current_user_top_tracks(limit=10)
+        assert top_tracks is not None
+        track_uris = [track["uri"] for track in top_tracks["items"]]
 
-    sp.playlist_add_items(playlist["id"], track_uris)
+        if not track_uris:
+            return JsonResponse({"error": "No top tracks found."}, status=400)
+
+    playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
+
+    if track_uris:
+        sp.playlist_add_items(playlist["id"], track_uris)
+
+    use_weather = request.POST.get("use_weather") == "on"
+
+    if use_weather:
+        lat = request.POST.get("lat")
+        lon = request.POST.get("lon")
+        location = request.POST.get("location")
+
+        if location:
+            weather = get_weather_data(city=location)
+        elif lat and lon:
+            weather = get_weather_data(lat=float(lat), lon=float(lon))
+        else:
+            weather = None
+
+        if weather:
+            weather_features = map_weather_to_mood(weather)
 
     return JsonResponse({
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"]
     })
 
-from django.contrib.auth import get_user_model, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
-
-User = get_user_model()
 
 def signup_page(request):
     if request.user.is_authenticated:

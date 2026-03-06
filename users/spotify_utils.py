@@ -1,6 +1,25 @@
+import time
 import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+from spotipy.oauth2 import SpotifyOAuth, SpotifyOauthError
 from django.conf import settings
+
+def get_valid_spotify_client(user):
+    """Returns a spotipy client with a valid (refreshed if needed) token for the given user."""
+    from .models import SpotifyToken
+    token_obj = SpotifyToken.objects.get(user=user)
+
+    if int(time.time()) >= token_obj.expires_at:
+        try:
+            sp_oauth = get_spotify_oauth()
+            token_info = sp_oauth.refresh_access_token(token_obj.refresh_token)
+            token_obj.access_token = token_info["access_token"]
+            token_obj.expires_at = token_info["expires_at"]
+            token_obj.save()
+        except SpotifyOauthError:
+            token_obj.delete()
+            raise SpotifyToken.DoesNotExist
+
+    return spotipy.Spotify(auth=token_obj.access_token)
 
 # Required OAuth for Spotify API
 def get_spotify_oauth():
@@ -8,28 +27,5 @@ def get_spotify_oauth():
         client_id=settings.SPOTIFY_CLIENT_ID,
         client_secret=settings.SPOTIFY_CLIENT_SECRET,
         redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-        scope="user-read-email playlist-modify-public playlist-modify-private"
+        scope="user-read-email user-top-read playlist-modify-public playlist-modify-private"
     )
-
-def create_playlist_for_user(request, name, description, track_uris):
-    sp = spotipy.Spotify(auth=request.session.get("spotify_access_token"))
-
-    # Get current Spotify user
-    user_profile = sp.current_user()
-    user_id = user_profile["id"]
-
-    # Create playlist
-    playlist = sp.user_playlist_create(
-        user=user_id,
-        name=name,
-        public=False,
-        description=description
-    )
-
-    # Add tracks
-    sp.playlist_add_items(
-        playlist_id=playlist["id"],
-        items=track_uris
-    )
-
-    return playlist

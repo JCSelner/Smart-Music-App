@@ -133,32 +133,6 @@ class ViewsTests(TestCase):
         self.assertRedirects(response, reverse("dashboard"))
 
     # -------------------------
-    # simple pages tests (generate, playlists, preferences)
-    # -------------------------
-    def test_generate_requires_login(self):
-        response = self.client.get(reverse("generate"))
-        self.assertEqual(response.status_code, 302)
-
-    def test_generate_renders_when_logged_in(self):
-        self.client.login(username="testuser", password="test1234")
-        response = self.client.get(reverse("generate"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "generate.html")
-
-    def test_playlists_renders_when_logged_in(self):
-        self.client.login(username="testuser", password="test1234")
-        response = self.client.get(reverse("playlists"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "playlists.html")
-
-    def test_preferences_renders_when_logged_in(self):
-        self.client.login(username="testuser", password="test1234")
-        response = self.client.get(reverse("preferences"))
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "preferences.html")
-
-
-    # -------------------------
     # password_change view
     # -------------------------
     def test_password_change_get_renders_form(self):

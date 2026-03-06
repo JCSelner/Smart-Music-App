@@ -228,27 +228,41 @@ def generate_playlist(request):
         sp = get_valid_spotify_client(request.user)
     except SpotifyToken.DoesNotExist:
         return redirect("spotify_login")
+
     assert sp is not None
-    top_tracks = sp.current_user_top_tracks(limit=10)
-    assert top_tracks is not None
-    track_uris = [track["uri"] for track in top_tracks["items"]]
+
+
+    use_history = request.POST.get("use_history") == "on"
+
+    track_uris = []
+
+    if use_history:
+        top_tracks = sp.current_user_top_tracks(limit=10)
+        assert top_tracks is not None
+        track_uris = [track["uri"] for track in top_tracks["items"]]
+
+        if not track_uris:
+            return JsonResponse({"error": "No top tracks found."}, status=400)
 
     playlist = sp._post("me/playlists", payload={"name": "Smart Playlist", "public": False})
 
-    sp.playlist_add_items(playlist["id"], track_uris)
+    if track_uris:
+        sp.playlist_add_items(playlist["id"], track_uris)
 
     use_weather = request.POST.get("use_weather") == "on"
-    
+
     if use_weather:
         lat = request.POST.get("lat")
         lon = request.POST.get("lon")
         location = request.POST.get("location")
-        
+
         if location:
             weather = get_weather_data(city=location)
         elif lat and lon:
             weather = get_weather_data(lat=float(lat), lon=float(lon))
-        
+        else:
+            weather = None
+
         if weather:
             weather_features = map_weather_to_mood(weather)
 
@@ -257,11 +271,6 @@ def generate_playlist(request):
         "url": playlist["external_urls"]["spotify"]
     })
 
-from django.contrib.auth import get_user_model, login
-from django.contrib import messages
-from django.shortcuts import render, redirect
-
-User = get_user_model()
 
 def signup_page(request):
     if request.user.is_authenticated:

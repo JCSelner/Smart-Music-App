@@ -14,6 +14,8 @@ from django.contrib.auth.forms import PasswordChangeForm
 from .weather_utils import get_weather_data, map_weather_to_mood
 import random
 from math import fabs
+from .models import Playlist
+from collections import Counter
 
 # Spotify OAuth
 
@@ -114,20 +116,39 @@ def dashboard(request):
     else:
         time_of_day = "evening"
 
+    recent_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")[:6]
+    total_playlists = Playlist.objects.filter(user=request.user).count()
+    favorite_mood = get_favorite_mood(request.user)
+    top_genre = get_top_genre(request.user)
+
     return render(request, "dashboard.html", {
         "display_name": display_name,
         "spotify_linked": spotify_linked,
         "time_of_day": time_of_day,
-        "total_playlists": 0,        # replace later with real queryset count
-        "top_genre": "—",            # replace later with Spotify data
-        "favourite_mood": "—",       # replace later with real data
+        "total_playlists": total_playlists,        # replace later with real queryset count
+        "top_genre": top_genre,            # replace later with Spotify data
+        "favourite_mood": favorite_mood,       # replace later with real data
         "weather_icon": "🌤️",        # replace later with OpenWeatherMap
         "weather_temp": "—",
         "weather_condition": "—",
         "weather_location": "—",
         "weather_mood": "—",
-        "recent_playlists": [],      # replace later with real queryset
+        "recent_playlists": recent_playlists,      # replace later with real queryset
     })
+
+def get_top_genre(user):
+    genres = Playlist.objects.filter(user=user).values_list("genre", flat=True)
+    genres = [g for g in genres if g]  # remove empty
+    if not genres:
+        return "—"
+    return Counter(genres).most_common(1)[0][0]
+
+def get_favorite_mood(user):
+    moods = Playlist.objects.filter(user=user).values_list("mood", flat=True)
+    moods = [m for m in moods if m]
+    if not moods:
+        return "—"
+    return Counter(moods).most_common(1)[0][0]
 
  #Weather Info
 @login_required
@@ -182,7 +203,11 @@ def generate_page(request):
 
 @login_required
 def playlists_page(request):
-    return render(request, "playlists.html")
+    playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
+
+    return render(request, "playlists.html", {
+        "playlists": playlists,
+    })
 
 @login_required
 def profile_page(request):
@@ -451,6 +476,26 @@ def generate_playlist(request):
     sp._post(
         f"playlists/{playlist['id']}/items",
         payload={"uris": final_uris}
+    )
+
+    track_genres = []
+
+    for track_uri in final_uris:
+        track = sp.track(track_uri)
+        for artist in track['artists']:
+            artist_info = sp.artist(artist['id'])
+            track_genres.extend(artist_info.get('genres', []))
+
+    playlist_genre = Counter(track_genres).most_common(1)[0][0] if track_genres else ""
+
+    Playlist.objects.create(
+        user=request.user,
+        name=playlist_name,
+        spotify_url=playlist["external_urls"]["spotify"],
+        track_count=len(final_uris),
+        mood=activity,
+        genre=playlist_genre,
+        weather_context=weather_features if weather_features else "",
     )
 
     return JsonResponse({

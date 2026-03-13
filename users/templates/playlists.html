@@ -75,33 +75,51 @@
                         <h1 class="topbar-title">Playlists</h1>
                     </div>
                 </header>
+                <section class="recent-section">
+                    <div class="section-header">
+                        <h2 class="section-title">My Playlists</h2>
+                        <a href="{% url 'generate' %}" class="section-link">Generate New →</a>
+                    </div>
 
-            <section class="playlists-list">
-                {% if playlists %}
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Created On</th>
-                                <th>Mood</th>
-                                <th>Spotify Link</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for playlist in playlists %}
-                            <tr>
-                                <td>{{ playlist.name }}</td>
-                                <td>{{ playlist.created_at|date:"M d, Y" }}</td>
-                                <td>{{ playlist.mood }}</td>
-                                <td><a href="{{ playlist.spotify_url }}" target="_blank">Open</a></td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p>No playlists generated yet. <a href="{% url 'generate' %}">Generate one now!</a></p>
-                {% endif %}
-            </section>
+                    <div class="playlist-grid">
+                        {% for playlist in playlists %}
+                        <div class="playlist-card">
+                            <div class="playlist-card__header">
+                                <!-- Mood dot, optional color mapping if you don't store mood_color -->
+                                <div class="playlist-card__mood-dot"
+                                     style="background:
+                                     {% if playlist.mood == 'chill' %}#7FDBFF
+                                     {% elif playlist.mood == 'workout' %}#FF4136
+                                     {% elif playlist.mood == 'study' %}#2ECC40
+                                     {% else %}#ccc
+                                     {% endif %};"></div>
+                                <span class="playlist-card__mood">{{ playlist.mood }}</span>
+                                <span class="playlist-card__date">{{ playlist.created_at|date:"M d" }}</span>
+                            </div>
+                            <div class="playlist-card__name">{{ playlist.name }}</div>
+                            <div class="playlist-card__meta">
+                                <span>{{ playlist.track_count }} tracks</span>
+                                <span class="dot">·</span>
+                                <span>{{ playlist.weather_context }}</span>
+                            </div>
+                            <a href="{{ playlist.spotify_url }}" target="_blank" class="playlist-card__open">
+                                Open in Spotify
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                    <polyline points="15 3 21 3 21 9"/>
+                                    <line x1="10" y1="14" x2="21" y2="3"/>
+                                </svg>
+                            </a>
+                        </div>
+                        {% empty %}
+                        <div class="empty-state">
+                            <div class="empty-state__icon">🎵</div>
+                            <p>No playlists yet — generate your first one!</p>
+                            <a href="{% url 'generate' %}" class="roundedButton" style="width:auto; padding: 12px 28px; margin-top: 12px;">Get Started</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
         </main>
     </div>
 </body>

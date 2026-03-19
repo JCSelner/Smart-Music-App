@@ -18,5 +18,8 @@ __pycache__/
 *.log
 local_settings.py
 
+# Dataset
+data/*.csv
+
 # Django file cache
 .django_cache/

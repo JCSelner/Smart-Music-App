@@ -11,7 +11,7 @@ import spotipy
 from django.contrib.auth import update_session_auth_hash
 from django.shortcuts import render, redirect
 from django.contrib.auth.forms import PasswordChangeForm
-from .weather_utils import get_weather_data, map_weather_to_mood
+from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 import random
 from math import fabs
 from .models import Playlist
@@ -168,6 +168,17 @@ def get_weather(request):
         return JsonResponse({"error": "Could not fetch weather data"}, status=500)
 
     return JsonResponse(weather)
+
+
+@login_required
+def get_location_suggest(request):
+    query = request.GET.get("q", "").strip()
+
+    if len(query) < 2:
+        return JsonResponse({"suggestions": []})
+
+    suggestions = get_location_suggestions(query, limit=5)
+    return JsonResponse({"suggestions": suggestions})
 
 
 def spotify_logout(request):

@@ -45,6 +45,7 @@ SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
 
 # Open Weather Map Settings
 OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY")
+GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
 
 # Application definition

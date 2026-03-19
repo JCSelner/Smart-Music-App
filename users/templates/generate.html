@@ -204,7 +204,7 @@
 
                             <div class="field-group">
                                 <label for="location">Location <span class="field-optional">(optional)</span></label>
-                                <div class="input-icon-wrap">
+                                <div class="input-icon-wrap location-autocomplete" id="locationAutocomplete">
                                     <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
                                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                                         <circle cx="12" cy="10" r="3"/>
@@ -215,7 +215,12 @@
                                         id="location"
                                         placeholder="{{ weather_location }}"
                                         class="has-icon"
+                                        autocomplete="off"
+                                        aria-autocomplete="list"
+                                        aria-expanded="false"
+                                        aria-controls="locationSuggestions"
                                     >
+                                    <ul id="locationSuggestions" class="location-suggestions" role="listbox"></ul>
                                 </div>
                             </div>
 
@@ -376,6 +381,6 @@
         });
     </script>
 
-    <script src="{% static 'js/weather.js' %}?v=20260304"></script>
+    <script src="{% static 'js/weather.js' %}?v=20260318-geoapify"></script>
 </body>
 </html>

@@ -150,7 +150,7 @@ function loadWeather() {
         var city = prompt("Enter city:");
         if (!city) return;
 
-        fetch("/api/weather/?city=" + city)
+        fetch("/api/weather/?city=" + encodeURIComponent(city))
             .then(function(r) {
                 if (!r.ok) throw new Error("Weather API failed");
                 return r.json();
@@ -163,8 +163,151 @@ function loadWeather() {
     });
 }
 
+function initLocationAutocomplete() {
+    var locationInput = document.getElementById("location");
+    var suggestionsEl = document.getElementById("locationSuggestions");
+    var latInput = document.getElementById("lat");
+    var lonInput = document.getElementById("lon");
+
+    if (!locationInput || !suggestionsEl) return;
+
+    var debounceTimer = null;
+    var activeIndex = -1;
+    var currentItems = [];
+    var requestToken = 0;
+
+    function clearSuggestions() {
+        currentItems = [];
+        activeIndex = -1;
+        suggestionsEl.innerHTML = "";
+        suggestionsEl.classList.remove("is-open");
+        locationInput.setAttribute("aria-expanded", "false");
+    }
+
+    function setActive(index) {
+        var buttons = suggestionsEl.querySelectorAll(".location-suggestion-btn");
+        for (var i = 0; i < buttons.length; i += 1) {
+            buttons[i].classList.toggle("is-active", i === index);
+        }
+        activeIndex = index;
+    }
+
+    function applySuggestion(item) {
+        locationInput.value = item.city || item.label;
+        if (latInput) latInput.value = String(item.lat);
+        if (lonInput) lonInput.value = String(item.lon);
+        clearSuggestions();
+
+        fetch("/api/weather/?lat=" + encodeURIComponent(item.lat) + "&lon=" + encodeURIComponent(item.lon))
+            .then(function(r) {
+                if (!r.ok) throw new Error("Weather API failed");
+                return r.json();
+            })
+            .then(function(data) {
+                if (!data || data.error) throw new Error("Weather payload invalid");
+                setWeatherUI(data);
+            })
+            .catch(function() {});
+    }
+
+    function renderSuggestions(items) {
+        currentItems = items;
+        activeIndex = -1;
+        suggestionsEl.innerHTML = "";
+
+        if (!items.length) {
+            clearSuggestions();
+            return;
+        }
+
+        for (var i = 0; i < items.length; i += 1) {
+            var li = document.createElement("li");
+            li.setAttribute("role", "option");
+
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "location-suggestion-btn";
+            button.textContent = items[i].label;
+            button.addEventListener("click", (function(item) {
+                return function() {
+                    applySuggestion(item);
+                };
+            })(items[i]));
+
+            li.appendChild(button);
+            suggestionsEl.appendChild(li);
+        }
+
+        suggestionsEl.classList.add("is-open");
+        locationInput.setAttribute("aria-expanded", "true");
+    }
+
+    function fetchSuggestions(query) {
+        requestToken += 1;
+        var currentToken = requestToken;
+
+        fetch("/api/location-suggest/?q=" + encodeURIComponent(query))
+            .then(function(r) {
+                if (!r.ok) throw new Error("Location suggest API failed");
+                return r.json();
+            })
+            .then(function(data) {
+                if (currentToken !== requestToken) return;
+                renderSuggestions((data && data.suggestions) || []);
+            })
+            .catch(function() {
+                if (currentToken !== requestToken) return;
+                clearSuggestions();
+            });
+    }
+
+    locationInput.addEventListener("input", function() {
+        var query = locationInput.value.trim();
+        if (latInput) latInput.value = "";
+        if (lonInput) lonInput.value = "";
+
+        if (query.length < 2) {
+            clearSuggestions();
+            return;
+        }
+
+        if (debounceTimer) {
+            window.clearTimeout(debounceTimer);
+        }
+
+        debounceTimer = window.setTimeout(function() {
+            fetchSuggestions(query);
+        }, 220);
+    });
+
+    locationInput.addEventListener("keydown", function(e) {
+        if (!currentItems.length) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActive((activeIndex + 1) % currentItems.length);
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActive((activeIndex - 1 + currentItems.length) % currentItems.length);
+        } else if (e.key === "Enter") {
+            if (activeIndex < 0) return;
+            e.preventDefault();
+            applySuggestion(currentItems[activeIndex]);
+        } else if (e.key === "Escape") {
+            clearSuggestions();
+        }
+    });
+
+    document.addEventListener("click", function(e) {
+        if (!suggestionsEl.classList.contains("is-open")) return;
+        if (e.target === locationInput || suggestionsEl.contains(e.target)) return;
+        clearSuggestions();
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     loadWeather();
+    initLocationAutocomplete();
     var weatherToggle = document.getElementById("use_weather");
     if (weatherToggle) {
         weatherToggle.addEventListener("change", function() {

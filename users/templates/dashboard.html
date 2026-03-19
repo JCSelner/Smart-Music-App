@@ -155,6 +155,10 @@
                 <div class="playlist-grid">
                     {% for playlist in recent_playlists %}
                     <div class="playlist-card">
+                        <form method="post" action="{% url 'delete_playlist' playlist.id %}" class="delete-form">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-btn" onclick="return confirm('Delete this playlist?');">X</button>
+                        </form>
                         <div class="playlist-card__header">
                             <div class="playlist-card__mood-dot" style="background: {{ playlist.mood_color }};"></div>
                             <span class="playlist-card__mood">{{ playlist.mood }}</span>

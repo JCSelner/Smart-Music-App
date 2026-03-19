@@ -519,6 +519,22 @@ def generate_playlist(request):
         "mood_terms": final_terms,
     })
 
+@login_required
+def delete_playlist(request, playlist_id):
+    if request.method == "POST":
+        playlist = Playlist.objects.get(id=playlist_id, user=request.user)
+
+        try:
+            sp = get_valid_spotify_client(request.user)
+            spotify_id = playlist.spotify_url.split("/")[-1]
+            sp.current_user_unfollow_playlist(spotify_id)
+        except Exception as e:
+            print("Spotify delete failed:", e)
+
+        playlist.delete()
+        return redirect("playlists")
+    return redirect("playlists")
+
 
 def signup_page(request):
     if request.user.is_authenticated:

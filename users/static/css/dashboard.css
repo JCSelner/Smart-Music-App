@@ -301,6 +301,44 @@ body {
     opacity: 0.4;
 }
 
+.delete-form {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.delete-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all var(--transition);
+}
+
+.delete-btn:hover {
+   background: rgba(255, 60, 172, 0.25);
+   transform: scale(1.1);
+}
+
+.playlist-card {
+    position: relative; /* 👈 REQUIRED */
+}
+
+.playlist-card:hover .delete-form {
+    opacity: 1;
+}
+
+
 /* ── Generate CTA Banner ──────────────────────────────────── */
 .generate-cta {
     display: flex;

@@ -17,4 +17,5 @@ urlpatterns = [
     path("password-change/", views.password_change, name="password_change"),
     path("delete-account/", views.delete_account, name="delete_account"),
     path("api/weather/", views.get_weather, name="get_weather"),
+    path("api/location-suggest/", views.get_location_suggest, name="get_location_suggest"),
 ]

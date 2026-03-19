@@ -3,6 +3,7 @@ import requests
 from django.conf import settings
 
 OPENWEATHERMAP_URL = "https://api.openweathermap.org/data/2.5/weather"
+GEOAPIFY_AUTOCOMPLETE_URL = "https://api.geoapify.com/v1/geocode/autocomplete"
 
 # def get_weather_data(*,city=None, lat=None, lon=None, units="imperial"):
 #     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
@@ -106,4 +107,58 @@ def map_weather_to_mood(weather_data):
         adjustments["energy"] = max(1, adjustments["energy"] - 1)
     
     return adjustments
+
+
+def get_location_suggestions(query, limit=5):
+    api_key = getattr(settings, "GEOAPIFY_API_KEY", None) or os.getenv("GEOAPIFY_API_KEY")
+    cleaned_query = (query or "").strip()
+
+    if not api_key or len(cleaned_query) < 2:
+        return []
+
+    params = {
+        "text": cleaned_query,
+        "type": "city",
+        "limit": max(1, min(int(limit), 10)),
+        "apiKey": api_key,
+    }
+
+    try:
+        response = requests.get(GEOAPIFY_AUTOCOMPLETE_URL, params=params, timeout=10)
+        response.raise_for_status()
+        payload = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        print(f"Error fetching location suggestions: {exc}")
+        return []
+
+    features = payload.get("features", []) if isinstance(payload, dict) else []
+    suggestions = []
+
+    for feature in features:
+        props = feature.get("properties", {})
+
+        label = (props.get("formatted") or "").strip()
+        city = (props.get("city") or props.get("name") or "").strip()
+        state = (props.get("state") or "").strip()
+        country = (props.get("country") or "").strip()
+        lat = props.get("lat")
+        lon = props.get("lon")
+
+        if not city or lat is None or lon is None:
+            continue
+
+        if not label:
+            label_parts = [p for p in [city, state, country] if p]
+            label = ", ".join(label_parts)
+
+        suggestions.append({
+            "label": label,
+            "city": city,
+            "state": state,
+            "country": country,
+            "lat": lat,
+            "lon": lon,
+        })
+
+    return suggestions
     

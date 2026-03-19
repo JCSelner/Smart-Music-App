@@ -75,6 +75,7 @@
         rgba(0, 255, 178, 0.04) 0%,
         rgba(120, 75, 160, 0.04) 100%
     );
+    overflow: hidden;
 }
 
 .gen-card__title {
@@ -318,6 +319,77 @@
 }
 input.has-icon {
     padding-left: 40px;
+}
+
+.location-autocomplete {
+    z-index: 6;
+}
+
+.location-suggestions {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    max-height: 170px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 255, 178, 0.18);
+    background:
+        linear-gradient(150deg, rgba(0, 255, 178, 0.05), rgba(120, 75, 160, 0.04)),
+        rgba(19, 20, 34, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+}
+
+.location-suggestions.is-open {
+    display: block;
+    animation: slideUp 0.18s ease-out;
+}
+
+.location-suggestions::-webkit-scrollbar {
+    width: 10px;
+}
+
+.location-suggestions::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.location-suggestions::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 99px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.location-suggestion-btn {
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.35;
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition), transform var(--transition);
+}
+
+.location-suggestion-btn:hover,
+.location-suggestion-btn.is-active {
+    background: rgba(0, 255, 178, 0.14);
+    color: var(--text-primary);
+    transform: translateX(2px);
 }
 
 /* Select */

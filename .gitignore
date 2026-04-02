@@ -20,3 +20,6 @@ local_settings.py
 
 # Dataset
 data/*.csv
+
+# Django file cache
+.django_cache/

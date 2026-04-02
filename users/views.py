@@ -1,20 +1,18 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth import login, logout, authenticate
-from users.models import User
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
-from .models import SpotifyToken
+from django.core.cache import cache
+from users.models import User
+from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
-import spotipy
-from django.contrib.auth import update_session_auth_hash
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import PasswordChangeForm
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 from .dataset_utils import recommend_tracks
+import spotipy
 import random
-from .models import Playlist
 from collections import Counter
 
 # Spotify OAuth
@@ -40,7 +38,6 @@ def spotify_callback(request):
     assert spotify_user is not None
 
     spotify_id = spotify_user.get("id")
-    display_name = spotify_user.get("display_name") or spotify_id
     email = spotify_user.get("email")
 
     # Create or get Django user
@@ -116,8 +113,9 @@ def dashboard(request):
     else:
         time_of_day = "evening"
 
-    recent_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")[:6]
-    total_playlists = Playlist.objects.filter(user=request.user).count()
+    all_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
+    recent_playlists = all_playlists[:6]
+    total_playlists = all_playlists.count()
     favorite_mood = get_favorite_mood(request.user)
     top_genre = get_top_genre(request.user)
 
@@ -377,15 +375,24 @@ def generate_playlist(request):
     if not playlist or not playlist.get("id"):
         return JsonResponse({"error": "Failed to create Spotify playlist."}, status=500)
 
-    sp._post(f"playlists/{playlist['id']}/tracks", payload={"uris": final_uris})
+    sp._post(f"playlists/{playlist['id']}/items", payload={"uris": final_uris})
 
     track_genres = []
 
-    for track_uri in final_uris:
-        track = sp.track(track_uri)
-        for artist in track['artists']:
-            artist_info = sp.artist(artist['id'])
-            track_genres.extend(artist_info.get('genres', []))
+    tracks_response = sp.tracks(final_uris) or {}
+    tracks_data = tracks_response.get("tracks", [])
+    artist_ids = list({
+        artist["id"]
+        for track in tracks_data if track
+        for artist in track.get("artists", [])
+    })
+
+    for artist_id in artist_ids:
+        artist_info = cache.get(f"artist_{artist_id}")
+        if artist_info is None:
+            artist_info = sp.artist(artist_id) or {}
+            cache.set(f"artist_{artist_id}", artist_info, timeout=60*60*24*7)
+        track_genres.extend(artist_info.get("genres", []))
 
     playlist_genre = Counter(track_genres).most_common(1)[0][0] if track_genres else ""
 

@@ -50,6 +50,13 @@ GEOAPIFY_API_KEY = os.getenv("GEOAPIFY_API_KEY")
 
 # Application definition
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": BASE_DIR / ".django_cache",
+    }
+}
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

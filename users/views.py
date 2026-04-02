@@ -391,7 +391,7 @@ def generate_playlist(request):
         artist_info = cache.get(f"artist_{artist_id}")
         if artist_info is None:
             artist_info = sp.artist(artist_id) or {}
-            cache.set(f"artist_{artist_id}", artist_info, timeout=60*60*24*7)
+            cache.set(f"artist_{artist_id}", artist_info, timeout=None)
         track_genres.extend(artist_info.get("genres", []))
 
     playlist_genre = Counter(track_genres).most_common(1)[0][0] if track_genres else ""

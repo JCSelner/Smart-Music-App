@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from users.models import User
 from django.core.cache import cache
+from users.models import User
 from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions

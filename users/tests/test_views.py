@@ -229,12 +229,124 @@ class ViewsTests(TestCase):
     # -------------------------
     # profile_page view
     # -------------------------
-    
-    # Just a basic test to check it renders for logged in users. Detailed tests will be added 
-    #once we have more functionality on the profile page.
+
+    def test_profile_page_requires_login(self):
+        response = self.client.get(reverse("profile"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_profile_page_renders_with_context(self):
+        self.client.login(username="testuser", password="test1234")
+
+        response = self.client.get(reverse("profile"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "profile.html")
+
+        self.assertEqual(response.context["username"], "testuser")
+        self.assertEqual(response.context["email"], "test@example.com")
+        self.assertIn("spotify_linked", response.context)
+        self.assertIn("display_name", response.context)
+        
         
     # -------------------------
     # generate_playlist view
     # -------------------------
 
-    # This is should be very basic test just to check the flow.  
+    @patch("users.views.get_valid_spotify_client")
+    @patch("users.views.get_weather_data")
+    @patch("users.views.map_weather_to_mood")
+    def test_generate_playlist_basic_flow(
+        self, mock_weather_map, mock_weather, mock_spotify_client
+    ):
+        self.client.login(username="testuser", password="test1234")
+
+        mock_sp = MagicMock()
+
+        mock_sp.search.return_value = {
+            "tracks": {
+                "items": [
+                    {
+                        "name": "Test Song",
+                        "uri": "spotify:track:123",
+                        "artists": [{"name": "Artist"}],
+                    }
+                ]
+            }
+        }
+
+        mock_sp._post.side_effect = [
+            {"id": "playlist123", "external_urls": {"spotify": "http://spotify.com/test"}},
+            {},
+        ]
+
+        mock_sp.tracks.return_value = {
+            "tracks": [{"artists": [{"id": "artist123"}]}]
+        }
+
+        mock_sp.artist.return_value = {"genres": ["pop"]}
+
+        mock_spotify_client.return_value = mock_sp
+
+        mock_weather.return_value = {"conditions": "clear"}
+        mock_weather_map.return_value = "sunny"
+
+        SpotifyToken.objects.create(
+            user=self.user,
+            access_token="ACCESS",
+            refresh_token="REFRESH",
+            expires_at=9999999999,
+        )
+
+        response = self.client.post(
+            reverse("generate_playlist"),
+            {
+                "playlist_name": "Test Playlist",
+                "track_count": 10,
+                "energy": 5,
+                "happiness": 5,
+                "danceability": 5,
+                "activity": "chill",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("url", response.json())
+
+        from users.models import Playlist
+        self.assertTrue(Playlist.objects.filter(name="Test Playlist").exists())
+
+
+    @patch("users.views.get_valid_spotify_client")
+    def test_generate_playlist_without_spotify_token_redirects(self, mock_spotify):
+        self.client.login(username="testuser", password="test1234")
+
+        mock_spotify.side_effect = SpotifyToken.DoesNotExist
+
+        response = self.client.post(reverse("generate_playlist"))
+
+        self.assertEqual(response.status_code, 302)
+
+    # -------------------------
+    # get_location_suggest view
+    # -------------------------
+
+    @patch("users.views.get_location_suggestions")
+    def test_location_suggest(self, mock_suggest):
+        self.client.login(username="testuser", password="test1234")
+
+        mock_suggest.return_value = ["Milwaukee", "Madison"]
+
+        response = self.client.get(reverse("get_location_suggest"), {"q": "Mi"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["suggestions"], ["Milwaukee", "Madison"])    
+
+    # -------------------------
+    # delete_account view
+    # -------------------------
+
+    def test_delete_account_post(self):
+        self.client.login(username="testuser", password="test1234")
+
+        response = self.client.post(reverse("delete_account"))
+        self.assertRedirects(response, reverse("login_page"))
+
+        self.assertFalse(User.objects.filter(username="testuser").exists())

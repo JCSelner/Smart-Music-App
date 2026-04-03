@@ -335,14 +335,17 @@ def generate_playlist(request):
     for track_name, artist in candidates:
         if len(final_uris) >= needed:
             break
-        query = f'track:"{track_name}" artist:"{artist}"'
-        results = sp.search(q=query, type="track", limit=1)
-        items = results.get("tracks", {}).get("items", [])
-        if items:
-            uri = items[0].get("uri")
-            if uri and uri not in seen_uris:
-                seen_uris.add(uri)
-                final_uris.append(uri)
+        cache_key = f"track_uri_{track_name}_{artist}"
+        uri = cache.get(cache_key)
+        if uri is None:
+            query = f'track:"{track_name}" artist:"{artist}"'
+            results = sp.search(q=query, type="track", limit=1)
+            items = results.get("tracks", {}).get("items", [])
+            uri = items[0].get("uri") if items else ""
+            cache.set(cache_key, uri, timeout=None)
+        if uri and uri not in seen_uris:
+            seen_uris.add(uri)
+            final_uris.append(uri)
 
     if not final_uris:
         return JsonResponse({"error": "No tracks found to build playlist."}, status=400)

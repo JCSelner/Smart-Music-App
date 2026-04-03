@@ -82,7 +82,7 @@
                 </div>
             </header>
 
-            <form method="post" action="{% url 'generate_playlist' %}" id="genForm">
+            <form method="post" action="{% url 'generate_playlist' %}" id="genForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <input type="hidden" name="lat" id="lat">
                 <input type="hidden" name="lon" id="lon">
@@ -252,6 +252,17 @@
                                     placeholder="My Smart Playlist"
                                     maxlength="100"
                                 >
+                            </div>
+
+                            <div class="field-group">
+                                <label for="playlist_image">Playlist Cover Image</label>
+                                <input
+                                    type="file"
+                                    name="playlist_image"
+                                    id="playlist_image"
+                                    accept=image/jpeg,image/png"
+                                >
+                                <small>Image must be less that 256KB</small>
                             </div>
 
                             <div class="field-row">

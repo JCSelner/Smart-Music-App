@@ -5,13 +5,18 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
+from users.models import User
 from django.core.cache import cache
-from .models import SpotifyToken
+from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 import spotipy
 import random
 from collections import Counter
+import base64
+from io import BytesIO
+from PIL import Image
+import requests
 
 # Spotify OAuth
 
@@ -267,6 +272,7 @@ def generate_playlist(request):
     playlist_name = request.POST.get("playlist_name", "").strip() or "Smart Playlist"
     visibility = request.POST.get("visibility", "private")
     is_public = visibility == "public"
+    image_file = request.FILES.get("playlist_image")
 
     try:
         track_count = int(request.POST.get("track_count", 20))
@@ -470,8 +476,33 @@ def generate_playlist(request):
 
     track_genres = []
 
+    spotify_token = SpotifyToken.objects.get(user=request.user)
+    token = spotify_token.access_token
+    if image_file:
+        img = Image.open(image_file)
+
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+
+        img.thumbnail((300, 300))
+
+        buffer = BytesIO()
+        img.save(buffer, format="JPEG")
+
+        encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        requests.put(
+            f"https://api.spotify.com/v1/playlists/{playlist['id']}/images",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "image/jpeg"
+            },
+            data=encoded_image.encode("utf-8")
+        )
+
     try:
-        tracks_response = sp.tracks(final_uris) or {}
+        track_ids = [uri.split(":")[-1] for uri in final_uris]
+        tracks_response = sp.tracks(track_ids)
         tracks_data = tracks_response.get("tracks", [])
         artist_ids = list({
             artist["id"]
@@ -499,7 +530,7 @@ def generate_playlist(request):
         genre=playlist_genre,
         weather_context=weather_features if weather_features else "",
     )
-
+    print("PLAYLIST RESPONSE:", playlist)
     return JsonResponse({
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"],

@@ -23,10 +23,12 @@ def get_valid_spotify_client(user):
 
 # Required OAuth for Spotify API
 def get_spotify_oauth():
+    from spotipy.cache_handler import MemoryCacheHandler
     return SpotifyOAuth(
         client_id=settings.SPOTIFY_CLIENT_ID,
         client_secret=settings.SPOTIFY_CLIENT_SECRET,
         redirect_uri=settings.SPOTIFY_REDIRECT_URI,
         scope=("user-read-email", "user-top-read", "playlist-modify-public", "playlist-modify-private"),
         show_dialog=True,
+        cache_handler=MemoryCacheHandler(),
     )

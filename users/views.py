@@ -5,8 +5,8 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
-from users.models import User
-from .models import SpotifyToken, Playlist
+from django.core.cache import cache
+from .models import SpotifyToken
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 import spotipy
@@ -463,18 +463,30 @@ def generate_playlist(request):
         },
     )
 
-    sp._post(
-        f"playlists/{playlist['id']}/items",
-        payload={"uris": final_uris}
-    )
+    if not playlist or not playlist.get("id"):
+        return JsonResponse({"error": "Failed to create Spotify playlist."}, status=500)
+
+    sp._post(f"playlists/{playlist['id']}/items", payload={"uris": final_uris})
 
     track_genres = []
 
-    for track_uri in final_uris:
-        track = sp.track(track_uri)
-        for artist in track['artists']:
-            artist_info = sp.artist(artist['id'])
-            track_genres.extend(artist_info.get('genres', []))
+    try:
+        tracks_response = sp.tracks(final_uris) or {}
+        tracks_data = tracks_response.get("tracks", [])
+        artist_ids = list({
+            artist["id"]
+            for track in tracks_data if track
+            for artist in track.get("artists", [])
+        })
+
+        for artist_id in artist_ids:
+            artist_info = cache.get(f"artist_{artist_id}")
+            if artist_info is None:
+                artist_info = sp.artist(artist_id) or {}
+                cache.set(f"artist_{artist_id}", artist_info, timeout=None)
+            track_genres.extend(artist_info.get("genres", []))
+    except spotipy.SpotifyException:
+        pass
 
     playlist_genre = Counter(track_genres).most_common(1)[0][0] if track_genres else ""
 
@@ -495,7 +507,6 @@ def generate_playlist(request):
         "track_count": len(final_uris),
         "weather_features": weather_features,
         "activity": activity,
-        "mood_terms": final_terms,
     })
 
 @login_required

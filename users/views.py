@@ -1,20 +1,16 @@
 from django.shortcuts import redirect, render
-from django.contrib.auth import login, logout, authenticate
-from users.models import User
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
-from .models import SpotifyToken
+from users.models import User
+from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
-import spotipy
-from django.contrib.auth import update_session_auth_hash
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import PasswordChangeForm
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
+import spotipy
 import random
-from math import fabs
-from .models import Playlist
 from collections import Counter
 
 # Spotify OAuth
@@ -48,14 +44,17 @@ def spotify_callback(request):
         username=spotify_id,
         defaults={
             "email": email or "",
-            "role": "user",  # default role for Spotify users
+            "role": "user",
+            "display_name": display_name,
         }
     )
 
     # For Spotify users, prevent Django password login
     if created:
         user.set_unusable_password()
-        user.save()
+    else:
+        user.display_name = display_name
+    user.save()
 
     # Log user in
     login(request, user)
@@ -96,16 +95,8 @@ def django_login(request):
 
 @login_required
 def dashboard(request):
-    try:
-        sp = get_valid_spotify_client(request.user)
-        spotify_user = sp.current_user()
-        assert spotify_user is not None
-
-        display_name = spotify_user.get("display_name") or request.user.username
-        spotify_linked = True
-    except SpotifyToken.DoesNotExist:
-        display_name = request.user.username
-        spotify_linked = False
+    spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
+    display_name = request.user.display_name or request.user.username
 
     from datetime import datetime
     hour = datetime.now().hour
@@ -116,8 +107,9 @@ def dashboard(request):
     else:
         time_of_day = "evening"
 
-    recent_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")[:6]
-    total_playlists = Playlist.objects.filter(user=request.user).count()
+    all_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
+    recent_playlists = all_playlists[:6]
+    total_playlists = all_playlists.count()
     favorite_mood = get_favorite_mood(request.user)
     top_genre = get_top_genre(request.user)
 
@@ -197,12 +189,7 @@ def login_page(request):
 
 @login_required
 def generate_page(request):
-    try:
-        sp = get_valid_spotify_client(request.user)
-        sp.current_user()
-        spotify_linked = True
-    except SpotifyToken.DoesNotExist:
-        spotify_linked = False
+    spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
 
     return render(request, "generate.html", {
         "spotify_linked": spotify_linked,
@@ -223,16 +210,8 @@ def playlists_page(request):
 @login_required
 def profile_page(request):
     user = request.user
-    try:
-        sp = get_valid_spotify_client(request.user)
-        spotify_user = sp.current_user()
-        assert spotify_user is not None
-
-        display_name = spotify_user.get("display_name") or request.user.username
-        spotify_linked = True
-    except SpotifyToken.DoesNotExist:
-        display_name = request.user.username
-        spotify_linked = False
+    spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
+    display_name = user.display_name or user.username
 
     return render(request, "profile.html", {
         "display_name": display_name,

@@ -5,7 +5,6 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
-from users.models import User
 from django.core.cache import cache
 from users.models import User
 from .models import SpotifyToken, Playlist
@@ -15,10 +14,6 @@ from .dataset_utils import recommend_tracks, get_audio_baseline
 import spotipy
 import random
 from collections import Counter
-import base64
-from io import BytesIO
-from PIL import Image
-import requests
 
 # Spotify OAuth
 
@@ -274,7 +269,6 @@ def generate_playlist(request):
     playlist_name = request.POST.get("playlist_name", "").strip() or "Smart Playlist"
     visibility = request.POST.get("visibility", "private")
     is_public = visibility == "public"
-    image_file = request.FILES.get("playlist_image")
 
     try:
         track_count = int(request.POST.get("track_count", 20))
@@ -306,51 +300,21 @@ def generate_playlist(request):
         if weather:
             weather_features = map_weather_to_mood(weather)
 
-    # 1. Fetch user context for better recommendations
-    user_genres = []
-    baseline = None
-
-    try:
-        top_artists_resp = sp.current_user_top_artists(limit=20, time_range="short_term")
-        top_artists = top_artists_resp.get("items", []) if top_artists_resp else []
-        for artist in top_artists:
-            artist_id = artist.get("id")
-            if artist_id:
-                cached = cache.get(f"artist_{artist_id}")
-                genres = cached.get("genres", []) if cached else artist.get("genres", [])
-                user_genres.extend(genres)
-    except spotipy.SpotifyException:
-        pass
-
-    try:
-        recent_resp = sp.current_user_recently_played(limit=50)
-        recent_items = recent_resp.get("items", []) if recent_resp else []
-        recent_tracks = [
-            (item["track"]["name"], item["track"]["artists"][0]["name"])
-            for item in recent_items
-            if item.get("track") and item["track"].get("artists")
-        ]
-        baseline = get_audio_baseline(recent_tracks)
-    except spotipy.SpotifyException:
-        pass
-
-    # 2. Get dataset recommendations filtered by audio features
+    # 1. Get dataset recommendations filtered by audio features
     candidates = recommend_tracks(
         energy, happiness, danceability,
         activity=activity,
         weather_features=weather_features,
-        user_genres=user_genres or None,
-        baseline=baseline,
         limit=80,
     )
 
-    # 3. If using history, seed with user's top tracks
+    # 2. If using history, seed with user's top tracks
     seen_uris = set()
     final_uris = []
 
     if use_history:
         try:
-            top_tracks = sp.current_user_top_tracks(limit=20, time_range="short_term")
+            top_tracks = sp.current_user_top_tracks(limit=20, time_range="medium_term")
             top_items = top_tracks.get("items", []) if top_tracks else []
         except spotipy.SpotifyException:
             top_items = []
@@ -361,7 +325,7 @@ def generate_playlist(request):
                 seen_uris.add(uri)
                 final_uris.append(uri)
 
-    # 4. Resolve dataset candidates to Spotify URIs
+    # 3. Resolve dataset candidates to Spotify URIs
     needed = track_count * 2
     for track_name, artist in candidates:
         if len(final_uris) >= needed:
@@ -401,33 +365,8 @@ def generate_playlist(request):
 
     track_genres = []
 
-    spotify_token = SpotifyToken.objects.get(user=request.user)
-    token = spotify_token.access_token
-    if image_file:
-        img = Image.open(image_file)
-
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-
-        img.thumbnail((300, 300))
-
-        buffer = BytesIO()
-        img.save(buffer, format="JPEG")
-
-        encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-        requests.put(
-            f"https://api.spotify.com/v1/playlists/{playlist['id']}/images",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "image/jpeg"
-            },
-            data=encoded_image.encode("utf-8")
-        )
-
     try:
-        track_ids = [uri.split(":")[-1] for uri in final_uris]
-        tracks_response = sp.tracks(track_ids)
+        tracks_response = sp.tracks(final_uris) or {}
         tracks_data = tracks_response.get("tracks", [])
         artist_ids = list({
             artist["id"]
@@ -455,7 +394,7 @@ def generate_playlist(request):
         genre=playlist_genre,
         weather_context=weather_features if weather_features else "",
     )
-    print("PLAYLIST RESPONSE:", playlist)
+
     return JsonResponse({
         "message": "Playlist created!",
         "url": playlist["external_urls"]["spotify"],

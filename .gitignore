@@ -19,5 +19,7 @@ __pycache__/
 local_settings.py
 
 # Dataset
-# Currently implemented on music-api-testing, added to main to prevent accidental sharing.
 data/*.csv
+
+# Django file cache
+.django_cache/

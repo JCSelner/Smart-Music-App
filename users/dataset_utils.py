@@ -104,7 +104,7 @@ def recommend_tracks(energy, happiness, danceability, activity="chill",
         elif "snow" in weather_str or "cold" in weather_str:
             target_energy  = max(0.0, target_energy  - 0.10)
 
-    tol = 0.25
+    tol = 0.10
 
     audio_mask = (
         df["energy"].between(max(0.0, target_energy  - tol), min(1.0, target_energy  + tol)) &

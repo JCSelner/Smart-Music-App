@@ -25,17 +25,73 @@ def _load():
     return _df
 
 
-def recommend_tracks(energy, happiness, danceability, activity="chill", weather_features=None, limit=80):
+def get_audio_baseline(track_list):
+    """
+    Given a list of (track_name, artist) tuples from recently played,
+    find matches in the dataset and return average audio features.
+    Returns None if fewer than 5 matches are found.
+    """
+    df = _load()
+    energies, valences, dances = [], [], []
+
+    for track_name, artist in track_list:
+        mask = (
+            df["track_name"].str.lower() == track_name.lower()
+        ) & (
+            df["artists"].str.lower().str.contains(artist.lower(), regex=False)
+        )
+        rows = df[mask]
+        if not rows.empty:
+            row = rows.iloc[0]
+            energies.append(row["energy"])
+            valences.append(row["valence"])
+            dances.append(row["danceability"])
+
+    if len(energies) < 5:
+        return None
+
+    return {
+        "energy": sum(energies) / len(energies),
+        "valence": sum(valences) / len(valences),
+        "danceability": sum(dances) / len(dances),
+    }
+
+
+def _map_user_genres(user_genres, dataset_genres):
+    """
+    Map Spotify artist genre strings (e.g. 'indie pop') to dataset genre
+    tags (e.g. 'indie-pop') using substring matching after normalization.
+    """
+    matched = set()
+    for ug in user_genres:
+        normalized = ug.lower().replace(" ", "-")
+        for dg in dataset_genres:
+            if dg == normalized or dg in normalized or normalized in dg:
+                matched.add(dg)
+    return list(matched)
+
+
+def recommend_tracks(energy, happiness, danceability, activity="chill",
+                     weather_features=None, limit=80,
+                     user_genres=None, baseline=None):
     """
     Returns a list of (track_name, artist) tuples filtered by audio features.
     energy, happiness, danceability are 1-10 integer sliders.
+
+    If baseline is provided (avg audio features from recently played),
+    sliders act as adjustments (5 = neutral, each point = ±0.05).
+    If user_genres is provided, they are used to bias the genre filter.
     """
     df = _load()
 
-    # Normalize sliders (1-10) to 0.0-1.0
-    target_energy   = energy / 10
-    target_valence  = happiness / 10
-    target_dance    = danceability / 10
+    if baseline:
+        target_energy  = max(0.0, min(1.0, baseline["energy"]       + (energy       - 5) * 0.05))
+        target_valence = max(0.0, min(1.0, baseline["valence"]      + (happiness    - 5) * 0.05))
+        target_dance   = max(0.0, min(1.0, baseline["danceability"] + (danceability - 5) * 0.05))
+    else:
+        target_energy  = energy / 10
+        target_valence = happiness / 10
+        target_dance   = danceability / 10
 
     # Adjust targets based on weather
     if weather_features:
@@ -56,9 +112,20 @@ def recommend_tracks(energy, happiness, danceability, activity="chill", weather_
         df["danceability"].between(max(0.0, target_dance - tol), min(1.0, target_dance + tol))
     )
 
-    genres = ACTIVITY_GENRES.get(activity, [])
-    if genres:
-        filtered = df[audio_mask & df["track_genre"].isin(genres)]
+    activity_genres = ACTIVITY_GENRES.get(activity, [])
+
+    if user_genres:
+        dataset_genres = set(df["track_genre"].unique())
+        matched = _map_user_genres(user_genres, dataset_genres)
+
+        filtered = df[audio_mask & df["track_genre"].isin(matched)]
+        if len(filtered) < 20:
+            combined = list(set(matched + activity_genres))
+            filtered = df[audio_mask & df["track_genre"].isin(combined)]
+            if len(filtered) < 20:
+                filtered = df[audio_mask]
+    elif activity_genres:
+        filtered = df[audio_mask & df["track_genre"].isin(activity_genres)]
         if len(filtered) < 20:
             filtered = df[audio_mask]
     else:

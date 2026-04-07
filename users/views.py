@@ -300,21 +300,51 @@ def generate_playlist(request):
         if weather:
             weather_features = map_weather_to_mood(weather)
 
-    # 1. Get dataset recommendations filtered by audio features
+    # 1. Fetch user context for better recommendations
+    user_genres = []
+    baseline = None
+
+    try:
+        top_artists_resp = sp.current_user_top_artists(limit=20, time_range="short_term")
+        top_artists = top_artists_resp.get("items", []) if top_artists_resp else []
+        for artist in top_artists:
+            artist_id = artist.get("id")
+            if artist_id:
+                cached = cache.get(f"artist_{artist_id}")
+                genres = cached.get("genres", []) if cached else artist.get("genres", [])
+                user_genres.extend(genres)
+    except spotipy.SpotifyException:
+        pass
+
+    try:
+        recent_resp = sp.current_user_recently_played(limit=50)
+        recent_items = recent_resp.get("items", []) if recent_resp else []
+        recent_tracks = [
+            (item["track"]["name"], item["track"]["artists"][0]["name"])
+            for item in recent_items
+            if item.get("track") and item["track"].get("artists")
+        ]
+        baseline = get_audio_baseline(recent_tracks)
+    except spotipy.SpotifyException:
+        pass
+
+    # 2. Get dataset recommendations filtered by audio features
     candidates = recommend_tracks(
         energy, happiness, danceability,
         activity=activity,
         weather_features=weather_features,
+        user_genres=user_genres or None,
+        baseline=baseline,
         limit=80,
     )
 
-    # 2. If using history, seed with user's top tracks
+    # 3. If using history, seed with user's top tracks
     seen_uris = set()
     final_uris = []
 
     if use_history:
         try:
-            top_tracks = sp.current_user_top_tracks(limit=20, time_range="medium_term")
+            top_tracks = sp.current_user_top_tracks(limit=20, time_range="short_term")
             top_items = top_tracks.get("items", []) if top_tracks else []
         except spotipy.SpotifyException:
             top_items = []
@@ -325,7 +355,7 @@ def generate_playlist(request):
                 seen_uris.add(uri)
                 final_uris.append(uri)
 
-    # 3. Resolve dataset candidates to Spotify URIs
+    # 4. Resolve dataset candidates to Spotify URIs
     needed = track_count * 2
     for track_name, artist in candidates:
         if len(final_uris) >= needed:

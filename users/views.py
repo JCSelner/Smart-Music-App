@@ -316,17 +316,33 @@ def generate_playlist(request):
     except spotipy.SpotifyException:
         pass
 
+    history_tracks = []
+    top_items = []
+
     try:
         recent_resp = sp.current_user_recently_played(limit=50)
         recent_items = recent_resp.get("items", []) if recent_resp else []
-        recent_tracks = [
+        history_tracks += [
             (item["track"]["name"], item["track"]["artists"][0]["name"])
             for item in recent_items
             if item.get("track") and item["track"].get("artists")
         ]
-        baseline = get_audio_baseline(recent_tracks)
     except spotipy.SpotifyException:
         pass
+
+    try:
+        top_tracks_resp = sp.current_user_top_tracks(limit=50, time_range="short_term")
+        top_items = top_tracks_resp.get("items", []) if top_tracks_resp else []
+        history_tracks += [
+            (item["name"], item["artists"][0]["name"])
+            for item in top_items
+            if item.get("name") and item.get("artists")
+        ]
+    except spotipy.SpotifyException:
+        pass
+
+    baseline = get_audio_baseline(history_tracks) if history_tracks else None
+    exclude_tracks = {item["name"].lower() for item in top_items if item.get("name")} if top_items else None
 
     # 2. Get dataset recommendations filtered by audio features
     candidates = recommend_tracks(
@@ -335,6 +351,7 @@ def generate_playlist(request):
         weather_features=weather_features,
         user_genres=user_genres or None,
         baseline=baseline,
+        exclude_tracks=exclude_tracks,
         limit=80,
     )
 

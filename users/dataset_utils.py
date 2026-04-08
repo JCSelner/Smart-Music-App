@@ -3,6 +3,7 @@ import os
 
 _df = None
 
+
 # Per-activity overrides: dance tolerance, tempo range (BPM), acousticness target
 # dance_tol: how strictly to filter danceability (None = use default tol)
 # tempo: (min, max) BPM range, None = no filter

@@ -355,18 +355,12 @@ def generate_playlist(request):
         limit=80,
     )
 
-    # 3. If using history, seed with user's top tracks
+    # 3. If using history, seed with user's top tracks (reuse already-fetched top_items)
     seen_uris = set()
     final_uris = []
 
     if use_history:
-        try:
-            top_tracks = sp.current_user_top_tracks(limit=20, time_range="short_term")
-            top_items = top_tracks.get("items", []) if top_tracks else []
-        except spotipy.SpotifyException:
-            top_items = []
-
-        for item in top_items:
+        for item in top_items[:20]:
             uri = item.get("uri")
             if uri and uri not in seen_uris:
                 seen_uris.add(uri)

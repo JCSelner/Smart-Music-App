@@ -28,7 +28,7 @@ def get_spotify_oauth():
         client_id=settings.SPOTIFY_CLIENT_ID,
         client_secret=settings.SPOTIFY_CLIENT_SECRET,
         redirect_uri=settings.SPOTIFY_REDIRECT_URI,
-        scope=("user-read-email", "user-top-read", "playlist-modify-public", "playlist-modify-private", "ugc-image-upload"),
+        scope=("user-read-email", "user-top-read", "user-read-recently-played", "playlist-modify-public", "playlist-modify-private", "ugc-image-upload"),
         show_dialog=True,
         cache_handler=MemoryCacheHandler(),
     )

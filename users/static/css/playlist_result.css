@@ -1,0 +1,109 @@
+.result-hero {
+    display: block;
+    margin-top: 24px;
+    max-width: 760px;
+}
+
+.result-panel {
+    border-radius: 28px;
+    padding: 28px;
+    background: linear-gradient(135deg, rgba(28, 214, 166, 0.18), rgba(18, 24, 38, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
+}
+
+.result-kicker {
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-size: 12px;
+    opacity: 0.72;
+    margin-bottom: 12px;
+}
+
+.result-title {
+    font-size: clamp(2rem, 5vw, 3.8rem);
+    line-height: 0.98;
+    margin: 0 0 12px;
+}
+
+.result-copy {
+    max-width: 54ch;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.spotify-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: 999px;
+    background: #1db954;
+    color: #08110d;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.ghost-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.playlist-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.playlist-stat {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.playlist-stat__label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    opacity: 0.65;
+    margin-bottom: 8px;
+}
+
+.playlist-stat__value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+@media (max-width: 640px) {
+    .result-panel {
+        padding: 22px;
+    }
+
+    .result-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .spotify-cta,
+    .ghost-cta {
+        justify-content: center;
+    }
+}

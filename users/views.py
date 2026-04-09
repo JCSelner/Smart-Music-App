@@ -1,4 +1,4 @@
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
@@ -521,7 +521,7 @@ def generate_playlist(request):
 
     playlist_genre = Counter(track_genres).most_common(1)[0][0] if track_genres else ""
 
-    Playlist.objects.create(
+    playlist_record = Playlist.objects.create(
         user=request.user,
         name=playlist_name,
         spotify_url=playlist["external_urls"]["spotify"],
@@ -531,13 +531,14 @@ def generate_playlist(request):
         weather_context=weather_features if weather_features else "",
     )
     print("PLAYLIST RESPONSE:", playlist)
-    return JsonResponse({
-        "message": "Playlist created!",
-        "url": playlist["external_urls"]["spotify"],
-        "used_history": use_history,
-        "track_count": len(final_uris),
-        "weather_features": weather_features,
-        "activity": activity,
+    return redirect("playlist_result", playlist_id=playlist_record.id)
+
+
+@login_required
+def playlist_result(request, playlist_id):
+    playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+    return render(request, "playlist_result.html", {
+        "playlist": playlist,
     })
 
 @login_required

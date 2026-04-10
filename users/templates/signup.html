@@ -7,10 +7,19 @@
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
+    <!-- ── Signup Page ───────────────────────────────────
+        Features:
+            -Create account header
+            -Username, Email, Password, and Confirm Password box to enter information
+            -Sign up button to create an account
+            -Link back to the login page
+        -->
   <div class="overlay">
     <div class="content">
+      <!-- Header for creating account -->
       <h1>Create account</h1>
 
+      <!-- Pull messages to properly sign up and create a user -->
       {% if messages %}
         <ul class="messages">
           {% for message in messages %}
@@ -23,28 +32,35 @@
         {% csrf_token %}
 
         <div>
+          <!-- Username box to enter username -->
           <label for="username">Username</label>
           <input type="text" name="username" id="username" required>
         </div>
 
         <div>
+          <!-- Email box to enter email -->
           <label for="email">Email </label>
           <input type="email" name="email" id="email">
         </div>
 
         <div>
+          <!-- Password box to enter password -->
           <label for="password1">Password</label>
           <input type="password" name="password1" id="password1" required>
         </div>
 
         <div>
+          <!-- Confirm password box to confirm password -->
           <label for="password2">Confirm Password</label>
           <input type="password" name="password2" id="password2" required>
         </div>
 
+        <!-- Sign up to create an account -->
         <button type="submit" class="roundedButton">Sign Up</button>
       </form>
 
+      <br>
+      <!-- Link back to login page -->
       <p class="signup-text">
         Have an account?
         <a href="{% url 'login_page' %}">Sign in</a>

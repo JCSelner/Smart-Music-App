@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
+<!-- ── Dashboard Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Top of the page greeting
+            -Top of the page Spotify connection checker
+            -Boxs for the current weather of your location, playlist generated, top genre and favorite mood
+            -Section to link to the generate page
+            -All recent playlists created
+        -->
 
     <!-- Background decorations (reused from login) -->
     <div class="vinyl-ring"></div>
@@ -15,7 +24,16 @@
 
     <div class="app-shell">
 
-        <!-- ── Sidebar Nav ─────────────────────────────────── -->
+        <!-- ── Sidebar Nav ───────────────────────────────────
+        This section is included on every page and displays the sidebar on the left side of our program
+        Features:
+            -Our logo on the top
+            -Link to Dashboard
+            -Link to Generate
+            -Link to My Playlists
+            -Link to Profile
+            -Link to Logout
+        -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <span class="logo-mark"></span>
@@ -23,40 +41,30 @@
             </div>
 
             <nav class="sidebar-nav">
+                <!-- ── Link to dashboard on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'dashboard' %}" class="nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     <span>Dashboard</span>
                 </a>
+                <!-- ── Link to generate on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'generate' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     <span>Generate</span>
                 </a>
+                <!-- ── Link to My Playlists on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'playlists' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     <span>My Playlists</span>
                 </a>
-
-                <!-- Role-gated links rendered server-side -->
-                {% if user.role == 'manager' or user.role == 'admin' %}
-                <div class="nav-divider"></div>
-                <a href="{% url 'analytics' %}" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                    <span>Analytics</span>
-                </a>
-                {% endif %}
-                {% if user.role == 'admin' %}
-                <a href="{% url 'admin_dashboard' %}" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Admin</span>
-                </a>
-                {% endif %}
             </nav>
 
             <div class="sidebar-footer">
+                <!-- ── Link to Profile on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'profile' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span>Profile</span>
                 </a>
+                <!-- ── Link to Logout on the sidebar ─────────────────────────────────── -->
                 <form method="post" action="{% url 'spotify_logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="nav-item nav-logout">
@@ -73,11 +81,12 @@
             <!-- Top bar -->
             <header class="topbar">
                 <div class="topbar-greeting">
+                    <!-- ── Displays the time of day and the users username at the top of the page ───────────── -->
                     <p class="topbar-eyebrow">Good {{ time_of_day }}</p>
                     <h1 class="topbar-title">{{ display_name }}</h1>
                 </div>
                 <div class="topbar-right">
-                    <!-- Spotify connection badge -->
+                    <!-- Spotify connection badge | Tests to see if Spotify is connected currently. This is located in the top left of the page -->
                     {% if spotify_linked %}
                     <div class="badge badge--connected">
                         <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
@@ -95,7 +104,7 @@
             <!-- ── Stats row ───────────────────────────────── -->
             <section class="stats-row">
 
-                <!-- Weather card -->
+                <!-- Weather card | Displays the current weather based on your location -->
                 <div class="stat-card weather-card">
                     <div class="stat-card__label">Current Weather</div>
                     <div class="weather-main">
@@ -110,21 +119,21 @@
                     <div class="weather-hint">Perfect for a <strong>{{ weather_mood }}</strong> playlist</div>
                 </div>
 
-                <!-- Playlists generated -->
+                <!-- Playlists generated | Displays how many playlists have been generated -->
                 <div class="stat-card">
                     <div class="stat-card__label">Playlists Generated</div>
                     <div class="stat-card__value">{{ total_playlists }}</div>
                     <div class="stat-card__sub">All time</div>
                 </div>
 
-                <!-- Top genre -->
+                <!-- Top genre | Displays the top genre for the user -->
                 <div class="stat-card">
                     <div class="stat-card__label">Top Genre</div>
                     <div class="stat-card__value stat-card__value--sm">{{ top_genre }}</div>
                     <div class="stat-card__sub">From your listening history</div>
                 </div>
 
-                <!-- Favourite mood -->
+                <!-- Favourite mood | Displays the favourite mood of the user -->
                 <div class="stat-card">
                     <div class="stat-card__label">Favourite Mood</div>
                     <div class="stat-card__value stat-card__value--sm">{{ favourite_mood }}</div>
@@ -133,7 +142,7 @@
 
             </section>
 
-            <!-- ── Generate CTA ────────────────────────────── -->
+            <!-- ── Generate CTA | This is the box that contains the generate playlist button which links to the generate playlist page ────────── -->
             <section class="generate-cta">
                 <div class="generate-cta__text">
                     <h2>Ready to listen?</h2>
@@ -145,20 +154,23 @@
                 </a>
             </section>
 
-            <!-- ── Recent Playlists ─────────────────────────── -->
+            <!-- ── Recent Playlists | This displays the 6 most recent playlists the user has generated ─────────────────────────── -->
             <section class="recent-section">
                 <div class="section-header">
                     <h2 class="section-title">Recent Playlists</h2>
                     <a href="{% url 'playlists' %}" class="section-link">View all →</a>
                 </div>
 
+                <!-- ── Code to display a box for each separate playlist through a for loop ────────────────────────────────── -->
                 <div class="playlist-grid">
                     {% for playlist in recent_playlists %}
                     <div class="playlist-card">
+                        <!-- ── Delete button in the button left ────────────────────────────────── -->
                         <form method="post" action="{% url 'delete_playlist' playlist.id %}" class="delete-form">
                             {% csrf_token %}
                             <button type="submit" class="delete-btn" onclick="return confirm('Delete this playlist?');">X</button>
                         </form>
+                        <!-- ── Header displaying the playlist name, genre, date created ────────────────────────────────── -->
                         <div class="playlist-card__header">
                             <div class="playlist-card__mood-dot" style="background: {{ playlist.mood_color }};"></div>
                             <span class="playlist-card__mood">{{ playlist.mood }}</span>
@@ -176,6 +188,7 @@
                         </a>
                     </div>
                     {% empty %}
+                    <!-- ── Edge case for if no playlists have been created ────────────────────── -->
                     <div class="empty-state">
                         <div class="empty-state__icon">🎵</div>
                         <p>No playlists yet — generate your first one!</p>

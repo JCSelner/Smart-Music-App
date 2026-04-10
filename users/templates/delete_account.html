@@ -9,22 +9,31 @@
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 </head>
 <body>
+<!-- ── Delete_Account Page ───────────────────────────────────
+        Features:
+            -Header and warning for official deleting your account
+            -Button for deleting account
+            -Button for cancelling deletion
+        -->
 
 <div class="vinyl-ring"></div>
 <div class="vinyl-ring"></div>
 <div class="center-wrapper">
     <div class="profile-card delete-card">
+        <!-- ── Header and warning for official deleting your account ─────────────────────────────────── -->
         <h2 class="delete-title">Delete Account</h2>
         <p class="delete-text">
             Are you sure you want to permanently delete your account?
             This action cannot be undone.
         </p>
 
+        <!-- ── Button for deleting account ─────────────────────────────────── -->
         <form method="post">
             {% csrf_token %}
             <button type="submit" class="roundedButton delete-button">Yes, Delete My Account</button>
         </form>
 
+        <!-- ── Button cancelling linking back to the profile page ─────────────────────────────────── -->
         <a href="{% url 'profile' %}" class="roundedButton cancel-button">Cancel</a>
     </div>
 </div>

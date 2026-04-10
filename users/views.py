@@ -529,6 +529,7 @@ def generate_playlist(request):
         mood=activity,
         genre=playlist_genre,
         weather_context=weather_features if weather_features else "",
+        visibility=visibility,
     )
     print("PLAYLIST RESPONSE:", playlist)
     return redirect("playlist_result", playlist_id=playlist_record.id)

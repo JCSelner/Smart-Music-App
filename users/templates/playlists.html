@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 </head>
 <body>
+<!-- ── Playlists Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Header at the top for Playlists
+            -Link to generate a new playlists
+            -Boxs containing all playlists generated on the account
+        -->
+
     <!-- Background decorations (reused from login) -->
     <div class="vinyl-ring"></div>
     <div class="vinyl-ring"></div>
@@ -75,14 +83,17 @@
                     </div>
                 </header>
                 <section class="recent-section">
+                    <!-- ── Displays My Playlists and link to generation ────────────────────────────────── -->
                     <div class="section-header">
                         <h2 class="section-title">My Playlists</h2>
                         <a href="{% url 'generate' %}" class="section-link">Generate New →</a>
                     </div>
 
+                    <!-- ── Code to display a box for each separate playlist through a for loop ────────────────────────────────── -->
                     <div class="playlist-grid">
                         {% for playlist in playlists %}
                         <div class="playlist-card">
+                            <!-- ── Delete button in the button left ────────────────────────────────── -->
                             <form method="post" action="{% url 'delete_playlist' playlist.id %}" class="delete-form">
                                 {% csrf_token %}
                                 <button type="submit" class="delete-btn" onclick="return confirm('Delete this playlist?');">X</button>
@@ -96,15 +107,18 @@
                                      {% elif playlist.mood == 'study' %}#2ECC40
                                      {% else %}#ccc
                                      {% endif %};"></div>
+                                <!-- ── Header displaying the playlist name, genre, date created ────────────────────────────────── -->
                                 <span class="playlist-card__mood">{{ playlist.mood }}</span>
                                 <span class="playlist-card__date">{{ playlist.created_at|date:"M d" }}</span>
                             </div>
+                            <!-- ── Displays the playlist name as well as how many tracks and the visibility of the playlist ────────── -->
                             <div class="playlist-card__name">{{ playlist.name }}</div>
                             <div class="playlist-card__meta">
                                 <span>{{ playlist.track_count }} tracks</span>
                                 <span class="dot">·</span>
-                                
+                                <span>{{ playlist.visibility|capfirst }}</span>
                             </div>
+                            <!-- ── Link to open the playlist in Spotify ────────── -->
                             <a href="{{ playlist.spotify_url }}" target="_blank" class="playlist-card__open">
                                 Open in Spotify
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
@@ -114,6 +128,7 @@
                                 </svg>
                             </a>
                         </div>
+                        <!-- ── Edge case for if no playlists have been created ────────────────────── -->
                         {% empty %}
                         <div class="empty-state">
                             <div class="empty-state__icon">🎵</div>

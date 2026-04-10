@@ -9,7 +9,17 @@
     <link rel="stylesheet" href="{% static 'css/generate.css' %}">
 </head>
 <body>
-
+    <!-- ── Generate Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Top of the page message
+            -Mood sliders
+            -Activity chooser
+            -Weather Context
+            -Playlist Settings
+            -Generate Button
+            -Pop-up when generated
+        -->
     <div class="vinyl-ring"></div>
     <div class="vinyl-ring"></div>
 
@@ -66,6 +76,7 @@
         </aside>
 
         <main class="main-content gen-main">
+            <!-- ── Header for Generate Playlist ─────────────────────────────────── -->
             <header class="gen-header">
                 <div>
                     <p class="topbar-eyebrow">AI-Powered</p>
@@ -82,14 +93,17 @@
 
                     <div class="gen-col">
                         <div class="gen-card" style="animation-delay: 0.1s">
+                            <!-- ── Header for the mood box ─────────────────────────────────── -->
                             <div class="gen-card__title">
                                 <span class="gen-card__icon">🎭</span>
                                 Mood
                             </div>
                             <div class="gen-card__desc">Tune how your playlist feels.</div>
 
+                            <!-- ── Mood sliders | Set you mood for the playlist ─────────────────────────────────── -->
                             <div class="slider-group">
                                 <div class="slider-row">
+                                    <!-- ── This is the mood slider for calm vs energetic ─────────────────────────────────── -->
                                     <div class="slider-labels">
                                         <span>😴 Calm</span>
                                         <span class="slider-val" id="energyVal">5</span>
@@ -108,6 +122,7 @@
                                 </div>
 
                                 <div class="slider-row">
+                                    <!-- ── This is the mood slider for melancholic vs happy ─────────────────────────────────── -->
                                     <div class="slider-labels">
                                         <span>😔 Melancholic</span>
                                         <span class="slider-val" id="happyVal">5</span>
@@ -126,6 +141,7 @@
                                 </div>
 
                                 <div class="slider-row">
+                                    <!-- ── This is the mood slider for Focused vs Danceable ─────────────────────────────────── -->
                                     <div class="slider-labels">
                                         <span>🧘 Focused</span>
                                         <span class="slider-val" id="danceVal">5</span>
@@ -145,6 +161,7 @@
                             </div>
                         </div>
 
+                        <!-- ── This is the header for the activity box ─────────────────────────────────── -->
                         <div class="gen-card" style="animation-delay: 0.2s">
                             <div class="gen-card__title">
                                 <span class="gen-card__icon">🏃</span>
@@ -152,6 +169,7 @@
                             </div>
                             <div class="gen-card__desc">What are you up to?</div>
 
+                            <!-- ── These are setting up the radio buttons for the current activity ─────────────────────────────────── -->
                             <div class="activity-grid">
                                 {% for activity in activities %}
                                 <label class="activity-chip">
@@ -164,6 +182,7 @@
                                     <span>{{ activity.icon }} {{ activity.label }}</span>
                                 </label>
                                 {% empty %}
+                                <!-- ── These are all the buttons for the possible activities ─────────────────────────────────── -->
                                 <label class="activity-chip"><input type="radio" name="activity" value="chill" checked><span>😌 Chill</span></label>
                                 <label class="activity-chip"><input type="radio" name="activity" value="workout"><span>💪 Workout</span></label>
                                 <label class="activity-chip"><input type="radio" name="activity" value="study"><span>📚 Study</span></label>
@@ -177,14 +196,17 @@
                         </div>
                     </div>
 
+                    <!-- ── This displays the weather context ─────────────────────────────────── -->
                     <div class="gen-col">
                         <div class="gen-card gen-card--accent" style="animation-delay: 0.15s">
+                            <!-- ── Header for the weather context ─────────────────────────────────── -->
                             <div class="gen-card__title">
                                 <span class="gen-card__icon">🌍</span>
                                 Context
                             </div>
                             <div class="gen-card__desc">Your environment shapes the vibe.</div>
 
+                            <!-- ── Displays the emoji icon and weather temp for your area ─────────────────────────────────── -->
                             <div class="context-weather">
                                 <div class="weather-icon">{{ weather_icon }}</div>
                                 <div>
@@ -192,7 +214,7 @@
                                     <div class="context-weather__sub">Weather will influence your playlist's energy</div>
                                 </div>
                             </div>
-
+                            <!-- ── Finds your current location to get data ─────────────────────────────────── -->
                             <div class="field-group">
                                 <label for="location">Location <span class="field-optional">(optional)</span></label>
                                 <div class="input-icon-wrap location-autocomplete" id="locationAutocomplete">
@@ -215,6 +237,7 @@
                                 </div>
                             </div>
 
+                            <!-- ── Use weather to shape playlist button to change it ──────────────────────────────── -->
                             <label class="toggle-row">
                                 <span class="toggle-label">
                                     Use weather to shape playlist
@@ -228,12 +251,14 @@
                         </div>
 
                         <div class="gen-card" style="animation-delay: 0.25s">
+                            <!-- ── This is the header for the playlist settings ─────────────────────────────────── -->
                             <div class="gen-card__title">
                                 <span class="gen-card__icon">⚙️</span>
                                 Playlist Settings
                             </div>
                             <div class="gen-card__desc">Fine-tune the output.</div>
 
+                            <!-- ── Section to add the playlist name ─────────────────────────────────── -->
                             <div class="field-group">
                                 <label for="playlist_name">Playlist Name</label>
                                 <input
@@ -245,6 +270,7 @@
                                 >
                             </div>
 
+                            <!-- ── Section to add the playlist cover image ─────────────────────────────────── -->
                             <div class="field-group">
                                 <label for="playlist_image">Playlist Cover Image</label>
                                 <input
@@ -256,6 +282,7 @@
                                 <small>Image must be less that 256KB</small>
                             </div>
 
+                            <!-- ── Section to add how many tracks ─────────────────────────────────── -->
                             <div class="field-row">
                                 <div class="field-group">
                                     <label for="track_count">Tracks</label>
@@ -267,6 +294,7 @@
                                     </select>
                                 </div>
 
+                                <!-- ── Section to change whether the playlist is private or public ─────────────────────────────────── -->
                                 <div class="field-group">
                                     <label for="visibility">Visibility</label>
                                     <select name="visibility" id="visibility" class="styled-select">
@@ -276,6 +304,7 @@
                                 </div>
                             </div>
 
+                            <!-- ── Section to toggle if you want to use previous listening history ─────────────────────────────────── -->
                             <label class="toggle-row">
                                 <span class="toggle-label">
                                     Use my listening history
@@ -293,6 +322,7 @@
                                 </div>
                             </label>
 
+                            <!-- ── This makes sure Spotify is linked so code doesn't fail for previous listening history ─────────────────────────────────── -->
                             {% if not spotify_linked %}
                             <div class="spotify-warning">
                                 <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
@@ -305,6 +335,7 @@
                             {% endif %}
                         </div>
 
+                        <!-- ── Final Generate Playlist button ─────────────────────────────────── -->
                         <button type="submit" class="gen-btn" id="genBtn">
                             <span class="gen-btn__text">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20">
@@ -320,6 +351,7 @@
                     </div>
                 </div>
 
+                <!-- ── Result card created when generating a playlist ─────────────────────────────────── -->
                 {% if result %}
                 <div class="result-card">
                     <div class="result-card__check">✓</div>

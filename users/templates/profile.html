@@ -9,6 +9,16 @@
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 </head>
 <body>
+<!-- ── Profile Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Profile Heading
+            -Disconnect/Reconnect
+            -Username, Email, Role displaying
+            -Change Password link
+            -Delete Account link
+        -->
+
     <!-- Background decorations (reused from login) -->
     <div class="vinyl-ring"></div>
     <div class="vinyl-ring"></div>
@@ -72,11 +82,12 @@
             <!-- Top bar -->
             <div class="profile-card">
                 <header class="topbar">
+                    <!-- ── Header for Profile Page ─────────────────────────── -->
                     <div class="topbar-greeting">
                         <h1 class="topbar-title">Profile</h1>
                     </div>
                 </header>
-                <!-- Spotify connection badge -->
+                <!-- Shows if Spotify is connected and allows disconnection and reconnection ────────── -->
                     {% if spotify_linked %}
                     <form method="post" action="{{ spotify_disconnect_url }}">
                         {% csrf_token %}
@@ -96,23 +107,27 @@
                     </a>
                     {% endif %}
                     <div class="profile-info">
+                        <!-- ── Displays the username of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Username</span>
                             <span class="profile-value">{{ display_name }}</span>
                         </div>
+                        <!-- ── Displays the email of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Email</span>
                             <span class="profile-value">{{ email }}</span>
                         </div>
+                        <!-- ── Displays the role of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Role</span>
                             <span class="profile-value">{{ role }}</span>
                         </div>
                     </div>
-
+                <!-- ── Link to password change ─────────────────────────── -->
                     <a href="{{ password_change_url }}" class="roundedButton profile-button">
                         Change Password
                     </a>
+                    <!-- ── Link to delete account ─────────────────────────── -->
                     <a href="{{ delete_account_url }}" class="roundedButton profile-button">
                         Delete account
                     </a>

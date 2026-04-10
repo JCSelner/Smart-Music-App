@@ -5,18 +5,15 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
-from users.models import User
 from django.core.cache import cache
+from users.models import User
 from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
+from .dataset_utils import recommend_tracks, get_audio_baseline
 import spotipy
 import random
 from collections import Counter
-import base64
-from io import BytesIO
-from PIL import Image
-import requests
 
 # Spotify OAuth
 
@@ -272,7 +269,6 @@ def generate_playlist(request):
     playlist_name = request.POST.get("playlist_name", "").strip() or "Smart Playlist"
     visibility = request.POST.get("visibility", "private")
     is_public = visibility == "public"
-    image_file = request.FILES.get("playlist_image")
 
     try:
         track_count = int(request.POST.get("track_count", 20))
@@ -304,160 +300,94 @@ def generate_playlist(request):
         if weather:
             weather_features = map_weather_to_mood(weather)
 
-    # Build search terms from mood/activity/weather
-    mood_terms = []
+    # 1. Fetch user context for better recommendations
+    user_genres = []
+    baseline = None
 
-    if energy <= 3:
-        mood_terms.extend(["calm", "acoustic", "soft"])
-    elif energy <= 7:
-        mood_terms.extend(["chill", "groove"])
-    else:
-        mood_terms.extend(["energetic", "workout", "hype"])
+    try:
+        top_artists_resp = sp.current_user_top_artists(limit=20, time_range="short_term")
+        top_artists = top_artists_resp.get("items", []) if top_artists_resp else []
+        for artist in top_artists:
+            artist_id = artist.get("id")
+            if artist_id:
+                cached = cache.get(f"artist_{artist_id}")
+                genres = cached.get("genres", []) if cached else artist.get("genres", [])
+                user_genres.extend(genres)
+    except spotipy.SpotifyException:
+        pass
 
-    if happiness <= 3:
-        mood_terms.extend(["sad", "melancholy"])
-    elif happiness <= 7:
-        mood_terms.extend(["feel good", "warm"])
-    else:
-        mood_terms.extend(["happy", "uplifting"])
+    history_tracks = []
+    top_items = []
 
-    if danceability <= 3:
-        mood_terms.extend(["focus", "study"])
-    elif danceability <= 7:
-        mood_terms.extend(["vibe", "smooth"])
-    else:
-        mood_terms.extend(["dance", "party"])
+    try:
+        recent_resp = sp.current_user_recently_played(limit=50)
+        recent_items = recent_resp.get("items", []) if recent_resp else []
+        history_tracks += [
+            (item["track"]["name"], item["track"]["artists"][0]["name"])
+            for item in recent_items
+            if item.get("track") and item["track"].get("artists")
+        ]
+    except spotipy.SpotifyException:
+        pass
 
-    activity_map = {
-        "chill": ["chill", "relax"],
-        "workout": ["workout", "gym", "power"],
-        "study": ["study", "focus", "instrumental"],
-        "party": ["party", "dance", "club"],
-        "commute": ["drive", "commute", "road trip"],
-        "sleep": ["sleep", "calm", "ambient"],
-        "cooking": ["cooking", "feel good", "groovy"],
-        "focus": ["deep focus", "instrumental", "concentration"],
-    }
+    try:
+        top_tracks_resp = sp.current_user_top_tracks(limit=50, time_range="short_term")
+        top_items = top_tracks_resp.get("items", []) if top_tracks_resp else []
+        history_tracks += [
+            (item["name"], item["artists"][0]["name"])
+            for item in top_items
+            if item.get("name") and item.get("artists")
+        ]
+    except spotipy.SpotifyException:
+        pass
 
-    mood_terms.extend(activity_map.get(activity, ["chill"]))
+    baseline = get_audio_baseline(history_tracks) if history_tracks else None
+    exclude_tracks = {item["name"].lower() for item in top_items if item.get("name")} if top_items else None
 
-    if weather_features:
-        weather_mood = str(weather_features).lower()
+    # 2. Get dataset recommendations filtered by audio features
+    candidates = recommend_tracks(
+        energy, happiness, danceability,
+        activity=activity,
+        weather_features=weather_features,
+        user_genres=user_genres or None,
+        baseline=baseline,
+        exclude_tracks=exclude_tracks,
+        limit=80,
+    )
 
-        if "rain" in weather_mood or "storm" in weather_mood:
-            mood_terms.extend(["rainy day", "moody", "indie"])
-        elif "clear" in weather_mood or "sun" in weather_mood:
-            mood_terms.extend(["sunny", "happy", "summer"])
-        elif "snow" in weather_mood or "cold" in weather_mood:
-            mood_terms.extend(["winter", "cozy", "soft"])
-        elif "cloud" in weather_mood:
-            mood_terms.extend(["cloudy", "calm", "mellow"])
-
-    # remove duplicates, keep order
-    seen_terms = set()
-    final_terms = []
-    for term in mood_terms:
-        if term not in seen_terms:
-            seen_terms.add(term)
-            final_terms.append(term)
-
-    
-    # Collect candidate tracks
-    candidate_tracks = []
+    # 3. If using history, seed with user's top tracks (reuse already-fetched top_items)
     seen_uris = set()
+    final_uris = []
 
-    def add_tracks(items):
-        for item in items:
+    if use_history:
+        for item in top_items[:20]:
             uri = item.get("uri")
             if uri and uri not in seen_uris:
                 seen_uris.add(uri)
-                candidate_tracks.append(item)
+                final_uris.append(uri)
 
-    # 1. If using history, start with top tracks and top artists
-    if use_history:
-        top_tracks = sp.current_user_top_tracks(limit=20, time_range="medium_term")
-        top_items = top_tracks.get("items", [])
-        add_tracks(top_items)
-
-        artist_names = []
-        seen_artists = set()
-
-        for track in top_items:
-            for artist in track.get("artists", []):
-                name = artist.get("name")
-                if name and name not in seen_artists:
-                    seen_artists.add(name)
-                    artist_names.append(name)
-
-        random.shuffle(artist_names)
-
-        for artist_name in artist_names[:5]:
-            for term in final_terms[:3]:
-                query = f'artist:"{artist_name}" {term}'
-                results = sp.search(q=query, type="track", limit=10)
-                items = results.get("tracks", {}).get("items", [])
-                add_tracks(items)
-
-                if len(candidate_tracks) >= 80:
-                    break
-            if len(candidate_tracks) >= 80:
-                break
-
-    #2. Add tracks based on mood/activity/weather queries
-    random.shuffle(final_terms)
-
-    for term in final_terms:
-        results = sp.search(q=term, type="track", limit=10)
-        items = results.get("tracks", {}).get("items", [])
-        add_tracks(items)
-
-        if len(candidate_tracks) >= 100:
+    # 4. Resolve dataset candidates to Spotify URIs
+    needed = track_count * 2
+    for track_name, artist in candidates:
+        if len(final_uris) >= needed:
             break
-
-    if not candidate_tracks:
-        return JsonResponse({"error": "No tracks found to build playlist."}, status=400)
-
-   
-    # Score tracks based on parameters
-    scored = []
-
-    for track in candidate_tracks:
-        name = (track.get("name") or "").lower()
-        artists = " ".join(
-            artist.get("name", "") for artist in track.get("artists", [])
-        ).lower()
-
-        score = 0
-
-        for term in final_terms:
-            term_lower = term.lower()
-            if term_lower in name or term_lower in artists:
-                score += 2
-
-        if activity in name or activity in artists:
-            score += 2
-
-        if use_history:
-            score += 1
-
-        score += random.randint(0, 3)
-        scored.append((score, track))
-
-    scored.sort(key=lambda x: x[0], reverse=True)
-
-    final_uris = []
-    used = set()
-
-    for score, track in scored:
-        uri = track.get("uri")
-        if uri and uri not in used:
-            used.add(uri)
+        cache_key = f"track_uri_{track_name}_{artist}"
+        uri = cache.get(cache_key)
+        if uri is None:
+            query = f'track:"{track_name}" artist:"{artist}"'
+            results = sp.search(q=query, type="track", limit=1)
+            items = results.get("tracks", {}).get("items", [])
+            uri = items[0].get("uri") if items else ""
+            cache.set(cache_key, uri, timeout=None)
+        if uri and uri not in seen_uris:
+            seen_uris.add(uri)
             final_uris.append(uri)
-        if len(final_uris) >= track_count:
-            break
 
     if not final_uris:
-        return JsonResponse({"error": "No final tracks selected."}, status=400)
+        return JsonResponse({"error": "No tracks found to build playlist."}, status=400)
+
+    random.shuffle(final_uris)
+    final_uris = final_uris[:track_count]
 
     # Create playlist
     playlist = sp._post(
@@ -476,33 +406,8 @@ def generate_playlist(request):
 
     track_genres = []
 
-    spotify_token = SpotifyToken.objects.get(user=request.user)
-    token = spotify_token.access_token
-    if image_file:
-        img = Image.open(image_file)
-
-        if img.mode != "RGB":
-            img = img.convert("RGB")
-
-        img.thumbnail((300, 300))
-
-        buffer = BytesIO()
-        img.save(buffer, format="JPEG")
-
-        encoded_image = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-        requests.put(
-            f"https://api.spotify.com/v1/playlists/{playlist['id']}/images",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "image/jpeg"
-            },
-            data=encoded_image.encode("utf-8")
-        )
-
     try:
-        track_ids = [uri.split(":")[-1] for uri in final_uris]
-        tracks_response = sp.tracks(track_ids)
+        tracks_response = sp.tracks(final_uris) or {}
         tracks_data = tracks_response.get("tracks", [])
         artist_ids = list({
             artist["id"]

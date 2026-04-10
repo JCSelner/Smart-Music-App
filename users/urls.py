@@ -20,4 +20,5 @@ urlpatterns = [
     path("api/weather/", views.get_weather, name="get_weather"),
     path("api/location-suggest/", views.get_location_suggest, name="get_location_suggest"),
     path("playlist/delete/<int:playlist_id>/", views.delete_playlist, name="delete_playlist"),
+    path("analytics/", views.analytics_page, name="analytics"),
 ]

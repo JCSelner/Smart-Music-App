@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Analytics — Smart Music App</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+</head>
+<body>
+<!-- ── Analytics Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Header at the top
+            -Summary stat cards (total playlists, total tracks, top mood, top genre)
+            -Mood breakdown bar chart
+            -Activity breakdown bar chart
+            -Genre breakdown bar chart
+            -Weather context breakdown
+            -Playlist creation over time (monthly)
+            -Visibility split (public vs private)
+        -->
+
+    <div class="vinyl-ring"></div>
+    <div class="vinyl-ring"></div>
+
+    <div class="app-shell">
+
+        <!-- ── Sidebar Nav ─────────────────────────────── -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-mark"></span>
+                <span class="logo-text">SMA</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'generate' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Generate</span>
+                </a>
+                <a href="{% url 'playlists' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span>My Playlists</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{% url 'profile' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Profile</span>
+                </a>
+                <form method="post" action="{% url 'spotify_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-item nav-logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ── Main Content ─────────────────────────────── -->
+        <main class="main-content">
+
+            <header class="topbar">
+                <div class="topbar-greeting">
+                    <p class="topbar-eyebrow">Your listening habits</p>
+                    <h1 class="topbar-title">Analytics</h1>
+                </div>
+            </header>
+
+            {% if total_playlists == 0 %}
+            <!-- ── Empty state ──────────────────────────── -->
+            <div class="empty-state" style="margin-top: 60px;">
+                <div class="empty-state__icon">📊</div>
+                <p>No data yet — generate your first playlist to see analytics here.</p>
+                <a href="{% url 'generate' %}" class="roundedButton" style="width:auto; padding: 12px 28px; margin-top: 12px;">Get Started</a>
+            </div>
+
+            {% else %}
+
+            <!-- ── Summary stat cards ───────────────────── -->
+            <section class="stats-row">
+                <div class="stat-card">
+                    <div class="stat-card__label">Total Playlists</div>
+                    <div class="stat-card__value">{{ total_playlists }}</div>
+                    <div class="stat-card__sub">All time</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Total Tracks</div>
+                    <div class="stat-card__value">{{ total_tracks }}</div>
+                    <div class="stat-card__sub">Across all playlists</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Top Mood</div>
+                    <div class="stat-card__value stat-card__value--sm">{{ top_mood }}</div>
+                    <div class="stat-card__sub">Most used activity</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Top Genre</div>
+                    <div class="stat-card__value stat-card__value--sm">{{ top_genre }}</div>
+                    <div class="stat-card__sub">From generated playlists</div>
+                </div>
+                <!-- Listening time summary card -->
+                <div class="stat-card">
+                    <div class="stat-card__label">Recent Listening</div>
+                    <div class="stat-card__value stat-card__value--sm">
+                        {% if spotify_linked %}{{ listening_time_label }}{% else %}—{% endif %}
+                    </div>
+                    <div class="stat-card__sub">Last 50 Spotify plays</div>
+                </div>
+            </section>
+
+            <!-- ── Charts row ────────────────────────────── -->
+            <div class="analytics-grid">
+
+                <!-- Mood / Activity Breakdown -->
+                <div class="analytics-card analytics-card--wide">
+                    <div class="analytics-card__title">Activity Breakdown</div>
+                    <div class="analytics-card__desc">How often each activity was used when generating</div>
+                    <div class="bar-chart">
+                        {% for item in mood_breakdown %}
+                        <div class="bar-row">
+                            <span class="bar-label">{{ item.label|capfirst }}</span>
+                            <div class="bar-track">
+                                <div class="bar-fill" style="width: {{ item.pct }}%; background: {{ item.color }};"></div>
+                            </div>
+                            <span class="bar-count">{{ item.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Visibility split -->
+                <div class="analytics-card">
+                    <div class="analytics-card__title">Visibility Split</div>
+                    <div class="analytics-card__desc">Public vs private playlists</div>
+                    <div class="donut-wrap">
+                        <svg class="donut" viewBox="0 0 36 36">
+                            <!-- Background ring -->
+                            <circle class="donut-ring" cx="18" cy="18" r="15.9" fill="none" stroke-width="3.5"/>
+                            <!-- Private segment (goes first, starts at top = -25% offset) -->
+                            <circle class="donut-segment donut-segment--private"
+                                cx="18" cy="18" r="15.9" fill="none" stroke-width="3.5"
+                                stroke-dasharray="{{ private_pct }} {{ public_pct }}"
+                                stroke-dashoffset="25"/>
+                            <!-- Public segment -->
+                            <circle class="donut-segment donut-segment--public"
+                                cx="18" cy="18" r="15.9" fill="none" stroke-width="3.5"
+                                stroke-dasharray="{{ public_pct }} {{ private_pct }}"
+                                stroke-dashoffset="{{ private_offset }}"/>
+                        </svg>
+                        <div class="donut-center">
+                            <span class="donut-total">{{ total_playlists }}</span>
+                            <span class="donut-sub">total</span>
+                        </div>
+                    </div>
+                    <div class="donut-legend">
+                        <div class="legend-item">
+                            <span class="legend-dot legend-dot--public"></span>
+                            <span>Public</span>
+                            <strong>{{ public_count }}</strong>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-dot legend-dot--private"></span>
+                            <span>Private</span>
+                            <strong>{{ private_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playlists over time -->
+                <div class="analytics-card analytics-card--full">
+                    <div class="analytics-card__title">Playlists Over Time</div>
+                    <div class="analytics-card__desc">Monthly playlist generation activity</div>
+                    {% if monthly_counts %}
+                    <div class="timeline-chart">
+                        {% for item in monthly_counts %}
+                        <div class="timeline-col">
+                            <div class="timeline-bar-wrap">
+                                <div class="timeline-bar" style="height: {{ item.pct }}%;"></div>
+                            </div>
+                            <span class="timeline-label">{{ item.label }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="analytics-card__empty">Not enough data yet.</p>
+                    {% endif %}
+                </div>
+
+                <!-- ── Listening time: 7-day daily breakdown ── -->
+                <div class="analytics-card analytics-card--wide">
+                    <div class="analytics-card__title">🎧 Listening Time — Last 7 Days</div>
+                    <div class="analytics-card__desc">
+                        Based on your last 50 Spotify plays · Total:
+                        <strong style="color:#fff;">
+                            {% if spotify_linked and not needs_reauth %}{{ listening_time_label }}{% else %}—{% endif %}
+                        </strong>
+                    </div>
+
+                    {% if needs_reauth %}
+                    <!-- Token exists but user-read-recently-played scope was never granted -->
+                    <div class="listening-connect">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" style="opacity:0.5"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                        <p><strong style="color:#fff;">One more step!</strong><br>Re-connect Spotify to grant listening history access.</p>
+                        <a href="{% url 'spotify_login' %}?next=/analytics/" class="roundedButton" style="width:auto;padding:10px 24px;margin-top:10px;font-size:0.85rem;">Re-authorize Spotify</a>
+                    </div>
+
+                    {% elif spotify_linked and listening_daily %}
+                    <div class="bar-chart">
+                        {% for day in listening_daily %}
+                        <div class="bar-row">
+                            <span class="bar-label">{{ day.label }}</span>
+                            <div class="bar-track">
+                                <div class="bar-fill bar-fill--listening" style="width: {{ day.pct }}%;"></div>
+                            </div>
+                            <span class="bar-count">{{ day.minutes }}m</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% elif spotify_linked %}
+                    <p class="analytics-card__empty">No recent plays found on Spotify.</p>
+
+                    {% else %}
+                    <div class="listening-connect">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" style="opacity:0.4"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+                        <p>Connect your Spotify account to see listening time.</p>
+                        <a href="{% url 'spotify_login' %}" class="roundedButton" style="width:auto;padding:10px 24px;margin-top:10px;font-size:0.85rem;">Connect Spotify</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- ── Listening time: top recently played tracks ── -->
+                <div class="analytics-card">
+                    <div class="analytics-card__title">🔁 Recently Played</div>
+                    <div class="analytics-card__desc">Your most repeated tracks in recent plays</div>
+
+                    {% if needs_reauth %}
+                    <p class="analytics-card__empty">Re-authorize Spotify (see above) to unlock this.</p>
+
+                    {% elif spotify_linked and listening_top_recent %}
+                    <div class="track-list">
+                        {% for track in listening_top_recent %}
+                        <div class="track-row">
+                            <div class="track-info">
+                                <span class="track-name">{{ track.name }}</span>
+                                <span class="track-artist">{{ track.artist }}</span>
+                            </div>
+                            <div class="track-meta">
+                                <span class="track-duration">{{ track.duration_min }}m</span>
+                                {% if track.plays > 1 %}
+                                <span class="track-plays">×{{ track.plays }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% elif spotify_linked %}
+                    <p class="analytics-card__empty">No recent tracks found.</p>
+
+                    {% else %}
+                    <p class="analytics-card__empty">Connect Spotify to see this.</p>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+</body>
+</html>

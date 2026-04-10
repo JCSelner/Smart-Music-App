@@ -56,6 +56,11 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     <span>My Playlists</span>
                 </a>
+                <!-- ── Link to Analytics on the sidebar ─────────────────────────────────── -->
+                <a href="{% url 'analytics' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span>Analytics</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -140,7 +145,17 @@
                     <div class="stat-card__sub">Most used when generating</div>
                 </div>
 
+                <!-- Analytics card | Links to the analytics page -->
+                <a href="{% url 'analytics' %}" class="stat-card stat-card--link">
+                    <div class="stat-card__label">Analytics</div>
+                    <div class="stat-card__value">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </div>
+                    <div class="stat-card__sub">View your full stats →</div>
+                </a>
+
             </section>
+
 
             <!-- ── Generate CTA | This is the box that contains the generate playlist button which links to the generate playlist page ────────── -->
             <section class="generate-cta">

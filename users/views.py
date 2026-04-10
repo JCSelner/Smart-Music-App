@@ -14,13 +14,22 @@ from .dataset_utils import recommend_tracks, get_audio_baseline
 import spotipy
 import random
 from collections import Counter
+import base64
+from io import BytesIO
+from PIL import Image
+import requests
+from datetime import datetime, timezone
+
 
 # Spotify OAuth
 
 def spotify_login(request):
     """Redirect user to Spotify login page"""
+    next_url = request.GET.get("next", "")
     sp_oauth = get_spotify_oauth()
-    auth_url = sp_oauth.get_authorize_url()
+    auth_url = sp_oauth.get_authorize_url(state=next_url or None)
+    if next_url:
+        auth_url += "&show_dialog=true"
     return redirect(auth_url)
 
 
@@ -28,6 +37,8 @@ def spotify_callback(request):
     """Handle Spotify callback and log in the Django user"""
     sp_oauth = get_spotify_oauth()
     code = request.GET.get("code")
+    next_url = request.GET.get("state", "").strip()
+
     if not code:
         messages.error(request, "Spotify login failed")
         return redirect("login_page")
@@ -71,6 +82,8 @@ def spotify_callback(request):
         }
     )
 
+    if next_url and next_url.startswith("/") and " " not in next_url:
+        return redirect(next_url)
     return redirect("dashboard")
 
 
@@ -497,3 +510,150 @@ def signup_page(request):
         return redirect("dashboard")
 
     return render(request, "signup.html")
+
+
+# Analytics 
+MOOD_COLORS = {
+    "chill":   "#7FDBFF",
+    "workout": "#FF4136",
+    "study":   "#2ECC40",
+    "party":   "#FFD700",
+    "commute": "#FF851B",
+    "sleep":   "#B10DC9",
+    "cooking": "#01FF70",
+    "focus":   "#0074D9",
+}
+_DEFAULT_COLOR = "#888"
+
+
+def fetch_listening_stats(user):
+    base = {
+        "total_ms": 0, "total_minutes": 0, "time_label": "—",
+        "daily_breakdown": [], "top_recent": [],
+        "spotify_linked": False, "needs_reauth": False,
+    }
+
+    if not SpotifyToken.objects.filter(user=user).exists():
+        return base
+
+    try:
+        sp = get_valid_spotify_client(user)
+    except Exception as e:
+        return base
+
+    try:
+        result = sp.current_user_recently_played(limit=50)
+    except Exception as e:
+        return {**base, "spotify_linked": True, "needs_reauth": True}
+
+    items = result.get("items", []) if result else []
+    if not items:
+        return {**base, "spotify_linked": True}
+
+    now = datetime.now(timezone.utc)
+    total_ms = 0
+    daily_ms = [0] * 7
+    track_counts = Counter()
+
+    for item in items:
+        track = item.get("track") or {}
+        played_at_str = item.get("played_at", "")
+        duration_ms = track.get("duration_ms", 0)
+        try:
+            played_at = datetime.strptime(played_at_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+            played_at = played_at.replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            continue
+        days_ago = (now - played_at).days
+        total_ms += duration_ms
+        if 0 <= days_ago < 7:
+            daily_ms[days_ago] += duration_ms
+        name = track.get("name", "Unknown")
+        artists = ", ".join(a.get("name", "") for a in track.get("artists", []))
+        track_counts[(name, artists, duration_ms)] += 1
+
+
+    day_labels = ["Today", "Yesterday", "2d ago", "3d ago", "4d ago", "5d ago", "6d ago"]
+    max_daily = max(daily_ms) if any(daily_ms) else 1
+    daily_breakdown = [
+        {"label": day_labels[i], "minutes": round(daily_ms[i] / 60000),
+         "pct": round(daily_ms[i] / max_daily * 100)}
+        for i in range(7)
+    ]
+    top_recent = [
+        {"name": name, "artist": artist,
+         "duration_min": round(dur_ms / 60000, 1), "plays": plays}
+        for (name, artist, dur_ms), plays in track_counts.most_common(5)
+    ]
+    total_minutes = round(total_ms / 60000)
+    hours, mins = divmod(total_minutes, 60)
+    time_label = f"{hours}h {mins}m" if hours else f"{mins}m"
+
+    return {
+        "total_ms": total_ms, "total_minutes": total_minutes,
+        "time_label": time_label, "daily_breakdown": daily_breakdown,
+        "top_recent": top_recent, "spotify_linked": True, "needs_reauth": False,
+    }
+
+
+@login_required
+def analytics_page(request):
+    playlists = list(Playlist.objects.filter(user=request.user))
+    total_playlists = len(playlists)
+    total_tracks    = sum(p.track_count for p in playlists)
+
+    # Visibility breakdown
+    mood_counts = Counter(p.mood for p in playlists if p.mood)
+    top_mood    = mood_counts.most_common(1)[0][0] if mood_counts else "—"
+    max_mood    = max(mood_counts.values(), default=1)
+    mood_breakdown = [
+        {"label": label, "count": count, "pct": round(count / max_mood * 100),
+         "color": MOOD_COLORS.get(label, _DEFAULT_COLOR)}
+        for label, count in mood_counts.most_common()
+    ]
+
+    public_count   = sum(1 for p in playlists if p.visibility == "public")
+    private_count  = total_playlists - public_count
+    public_pct     = round(public_count / total_playlists * 100) if total_playlists else 0
+    private_pct    = 100 - public_pct
+    private_offset = 25 + public_pct
+
+    # Monthly creation timeline
+    now = datetime.now()
+    month_counts = Counter()
+    for p in playlists:
+        month_counts[p.created_at.strftime("%b %Y")] += 1
+    ordered_months = []
+    for i in range(11, -1, -1):
+        month_num = now.month - i
+        year      = now.year + (month_num - 1) // 12
+        month_num = ((month_num - 1) % 12) + 1
+        ordered_months.append(datetime(year, month_num, 1).strftime("%b %Y"))
+    max_monthly = max((month_counts.get(m, 0) for m in ordered_months), default=1) or 1
+    monthly_counts = [
+        {"label": m[:3], "count": month_counts.get(m, 0),
+         "pct": round(month_counts.get(m, 0) / max_monthly * 100)}
+        for m in ordered_months
+    ]
+
+    # Spotify listening stats
+    listening = fetch_listening_stats(request.user)
+
+    return render(request, "analytics.html", {
+        "total_playlists":      total_playlists,
+        "total_tracks":         total_tracks,
+        "top_mood":             top_mood,
+        "mood_breakdown":       mood_breakdown,
+        "public_count":         public_count,
+        "private_count":        private_count,
+        "public_pct":           public_pct,
+        "private_pct":          private_pct,
+        "private_offset":       private_offset,
+        "monthly_counts":       monthly_counts,
+        "listening_time_label": listening["time_label"],
+        "listening_total_min":  listening["total_minutes"],
+        "listening_daily":      listening["daily_breakdown"],
+        "listening_top_recent": listening["top_recent"],
+        "spotify_linked":       listening["spotify_linked"],
+        "needs_reauth":         listening["needs_reauth"],
+    })

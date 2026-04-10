@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.login_page, name="login_page"),
     path("dashboard/", views.dashboard, name = "dashboard"),
     path("generate/", views.generate_page, name="generate"),
+    path("playlist/<int:playlist_id>/", views.playlist_result, name="playlist_result"),
     path("playlists/", views.playlists_page, name="playlists"),     # add when ready
     path("profile/", views.profile_page, name="profile"),
     path("logout/", views.spotify_logout, name="spotify_logout"),

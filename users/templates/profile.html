@@ -9,13 +9,32 @@
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
 </head>
 <body>
+<!-- ── Profile Page ───────────────────────────────────
+        Features:
+            -Sidebar on the left
+            -Profile Heading
+            -Disconnect/Reconnect
+            -Username, Email, Role displaying
+            -Change Password link
+            -Delete Account link
+        -->
+
     <!-- Background decorations (reused from login) -->
     <div class="vinyl-ring"></div>
     <div class="vinyl-ring"></div>
 
     <div class="app-shell">
 
-        <!-- ── Sidebar Nav ─────────────────────────────────── -->
+        <!-- ── Sidebar Nav ───────────────────────────────────
+        This section is included on every page and displays the sidebar on the left side of our program
+        Features:
+            -Our logo on the top
+            -Link to Dashboard
+            -Link to Generate
+            -Link to My Playlists
+            -Link to Profile
+            -Link to Logout
+        -->
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <span class="logo-mark"></span>
@@ -23,40 +42,30 @@
             </div>
 
             <nav class="sidebar-nav">
+                <!-- ── Link to dashboard on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'dashboard' %}" class="nav-item active">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     <span>Dashboard</span>
                 </a>
+                <!-- ── Link to generate on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'generate' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     <span>Generate</span>
                 </a>
+                <!-- ── Link to My Playlists on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'playlists' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
                     <span>My Playlists</span>
                 </a>
-
-                <!-- Role-gated links rendered server-side -->
-                {% if user.role == 'manager' or user.role == 'admin' %}
-                <div class="nav-divider"></div>
-                <a href="{% url 'analytics' %}" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                    <span>Analytics</span>
-                </a>
-                {% endif %}
-                {% if user.role == 'admin' %}
-                <a href="{% url 'admin_dashboard' %}" class="nav-item">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>Admin</span>
-                </a>
-                {% endif %}
             </nav>
 
             <div class="sidebar-footer">
+                <!-- ── Link to Profile on the sidebar ─────────────────────────────────── -->
                 <a href="{% url 'profile' %}" class="nav-item">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     <span>Profile</span>
                 </a>
+                <!-- ── Link to Logout on the sidebar ─────────────────────────────────── -->
                 <form method="post" action="{% url 'spotify_logout' %}">
                     {% csrf_token %}
                     <button type="submit" class="nav-item nav-logout">
@@ -73,11 +82,12 @@
             <!-- Top bar -->
             <div class="profile-card">
                 <header class="topbar">
+                    <!-- ── Header for Profile Page ─────────────────────────── -->
                     <div class="topbar-greeting">
                         <h1 class="topbar-title">Profile</h1>
                     </div>
                 </header>
-                <!-- Spotify connection badge -->
+                <!-- Shows if Spotify is connected and allows disconnection and reconnection ────────── -->
                     {% if spotify_linked %}
                     <form method="post" action="{{ spotify_disconnect_url }}">
                         {% csrf_token %}
@@ -97,23 +107,27 @@
                     </a>
                     {% endif %}
                     <div class="profile-info">
+                        <!-- ── Displays the username of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Username</span>
                             <span class="profile-value">{{ display_name }}</span>
                         </div>
+                        <!-- ── Displays the email of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Email</span>
                             <span class="profile-value">{{ email }}</span>
                         </div>
+                        <!-- ── Displays the role of who is logged in ─────────────────────────── -->
                         <div class="profile-item">
                             <span class="profile-label">Role</span>
                             <span class="profile-value">{{ role }}</span>
                         </div>
                     </div>
-
+                <!-- ── Link to password change ─────────────────────────── -->
                     <a href="{{ password_change_url }}" class="roundedButton profile-button">
                         Change Password
                     </a>
+                    <!-- ── Link to delete account ─────────────────────────── -->
                     <a href="{{ delete_account_url }}" class="roundedButton profile-button">
                         Delete account
                     </a>

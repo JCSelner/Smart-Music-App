@@ -7,14 +7,20 @@
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
 </head>
 <body>
-
+    <!-- ── Login Page ───────────────────────────────────
+        Features:
+            -Left side to introduce our project
+            -Button to log into Spotify and access the application
+            -Username and Password Section to Sign in
+            -Link to Sign up if user does not have an account
+        -->
     <!-- Decorative rings -->
     <div class="vinyl-ring"></div>
     <div class="vinyl-ring"></div>
 
     <div class="overlay">
 
-        <!-- Left: Brand panel -->
+        <!-- Left: Brand panel | This shows all information on the left of our application -->
         <div class="brand-panel">
             <p class="brand-eyebrow">Smart Music App</p>
             <h1 class="brand-title">
@@ -34,17 +40,18 @@
 
         <!-- Right: Login panel -->
         <div class="content">
+            <!--Header for the login page right section -->
             <h1>Welcome back</h1>
             <p>Sign in to continue listening</p>
 
-            <!-- Spotify Login -->
+            <!-- Spotify Login | Choose this button to log into Spotify -->
             <a href="{% url 'spotify_login' %}">
                 <button class="roundedButton spotifyButton">Continue with Spotify</button>
             </a>
 
             <div class="divider">or</div>
 
-            <!-- Django Login -->
+            <!-- Django Login | Choose this button to log in with a username and password -->
             {% if messages %}
                 <ul>
                     {% for message in messages %}
@@ -53,20 +60,25 @@
                 </ul>
             {% endif %}
 
+            <!-- This calls the method to login properly -->
             <form method="post" action="{% url 'django_login' %}" class="loginForm">
                 {% csrf_token %}
                 <div>
+                    <!-- Box to enter username -->
                     <label for="username">Username</label>
                     <input type="text" name="username" id="username" placeholder="Enter username" required>
                 </div>
                 <div>
+                    <!-- Box to enter password -->
                     <label for="password">Password</label>
                     <input type="password" name="password" id="password" placeholder="Enter password" required>
                 </div>
+                <!-- Sign In button to properly sign in -->
                 <button type="submit" class="roundedButton">Sign In</button>
             </form>
             
-            
+            <br>
+            <!-- Link to the signup page to create an account -->
             <p class="signup-text">
                 Don’t have an account?
                 <a href="{% url 'signup_page' %}">Sign up</a>

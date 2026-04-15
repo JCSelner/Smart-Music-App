@@ -309,6 +309,10 @@ input::placeholder {
     color: rgba(240, 240, 248, 0.25);
 }
 
+html[data-theme="light"] input::placeholder {
+    color: rgba(17, 24, 39, 0.55);
+}
+
 input:focus {
     border-color: var(--accent-1);
     background: rgba(0, 255, 178, 0.04);

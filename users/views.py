@@ -1,3 +1,5 @@
+# Importing all the Django helpers and other stuff we need
+# This includes authentication, rendering pages, working with models, etc.
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -6,19 +8,23 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
+
+# Importing our own models and utility functions
 from users.models import User
 from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 from .dataset_utils import recommend_tracks, get_audio_baseline
-import spotipy
-import random
+
+# Standard Python imports
 from collections import Counter
-import base64
 from io import BytesIO
 from PIL import Image
-import requests
 from datetime import datetime, timezone
+import spotipy
+import random
+import requests
+import base64
 
 
 # Spotify OAuth
@@ -32,6 +38,9 @@ def spotify_login(request):
         auth_url += "&show_dialog=true"
     return redirect(auth_url)
 
+
+# Spotify callback
+# this handles much of what is required for spotify api
 
 def spotify_callback(request):
     """Handle Spotify callback and log in the Django user"""
@@ -108,6 +117,7 @@ def django_login(request):
 
 # Dashboard / Logout / Login Page
 
+# get info for the home dashboard
 @login_required
 def dashboard(request):
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
@@ -157,7 +167,7 @@ def get_favorite_mood(user):
         return "—"
     return Counter(moods).most_common(1)[0][0]
 
- #Weather Info
+ # Weather Info
 @login_required
 def get_weather(request):
     city = request.GET.get("city")
@@ -177,6 +187,7 @@ def get_weather(request):
     return JsonResponse(weather)
 
 
+# prompts users for location for weather api
 @login_required
 def get_location_suggest(request):
     query = request.GET.get("q", "").strip()
@@ -188,6 +199,7 @@ def get_location_suggest(request):
     return JsonResponse({"suggestions": suggestions})
 
 
+# ensures logout of not only webpage but also spotify
 def spotify_logout(request):
     """Logout for both Spotify and Django users"""
     if request.method == "POST":
@@ -196,12 +208,14 @@ def spotify_logout(request):
     return redirect("dashboard")
 
 
+# login via spotify or db
 def login_page(request):
     """Show the login page (Spotify + Django)"""
     if request.user.is_authenticated:
         return redirect("dashboard")
     return render(request, "login.html")
 
+# requests for the generate playlist page
 @login_required
 def generate_page(request):
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
@@ -214,6 +228,7 @@ def generate_page(request):
         "activities": [],
     })
 
+# page for previously made playlists
 @login_required
 def playlists_page(request):
     playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
@@ -222,6 +237,7 @@ def playlists_page(request):
         "playlists": playlists,
     })
 
+# user's profile page
 @login_required
 def profile_page(request):
     user = request.user
@@ -240,6 +256,7 @@ def profile_page(request):
         "delete_account_url": reverse("delete_account"),
     })
 
+# option to change db password
 @login_required
 def password_change(request):
     if request.method == 'POST':
@@ -257,6 +274,7 @@ def password_change(request):
 
     return render(request, 'password_change.html', {'form': form})
 
+# account removal
 @login_required
 def delete_account(request):
     if request.method == 'POST':
@@ -266,6 +284,7 @@ def delete_account(request):
         messages.success(request, 'Your account was successfully deleted!')
         return redirect('login_page')
     return render(request, 'delete_account.html')
+
 
 # Playlist Generation
 
@@ -453,6 +472,7 @@ def generate_playlist(request):
     return redirect("playlist_result", playlist_id=playlist_record.id)
 
 
+# playlist result page
 @login_required
 def playlist_result(request, playlist_id):
     playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
@@ -460,6 +480,7 @@ def playlist_result(request, playlist_id):
         "playlist": playlist,
     })
 
+#playlist delete page
 @login_required
 def delete_playlist(request, playlist_id):
     if request.method == "POST":
@@ -476,7 +497,7 @@ def delete_playlist(request, playlist_id):
         return redirect("playlists")
     return redirect("playlists")
 
-
+# signup for webpage 
 def signup_page(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
@@ -596,6 +617,7 @@ def fetch_listening_stats(user):
     }
 
 
+# webpage for spotify stats
 @login_required
 def analytics_page(request):
     playlists = list(Playlist.objects.filter(user=request.user))

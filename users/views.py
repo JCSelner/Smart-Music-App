@@ -1,3 +1,5 @@
+# Importing all the Django helpers and other stuff we need
+# This includes authentication, rendering pages, working with models, etc.
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -6,19 +8,24 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
+
+# Importing our own models and utility functions
 from users.models import User
 from .models import SpotifyToken, Playlist
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 from .dataset_utils import recommend_tracks, get_audio_baseline
-import spotipy
-import random
+
+# Standard Python imports
 from collections import Counter
-import base64
 from io import BytesIO
 from PIL import Image
-import requests
 from datetime import datetime, timezone
+import spotipy
+import random
+import requests
+import base64
+
 
 
 # Spotify OAuth

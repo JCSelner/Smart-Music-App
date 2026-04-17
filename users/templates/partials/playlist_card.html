@@ -1,0 +1,95 @@
+{% load playlist_tags %}
+
+<div class="playlist-card">
+
+    <form method="post" action="{% url 'delete_playlist' playlist.id %}" class="delete-form">
+        {% csrf_token %}
+        <button type="submit" class="delete-btn" onclick="return confirm('Delete this playlist?');">✕</button>
+    </form>
+
+    <div class="playlist-card__header">
+        <div class="playlist-card__mood-dot"
+             style="background: {{ playlist.mood|mood_color }};"></div>
+        <span class="playlist-card__mood">{{ playlist.mood|capfirst }}</span>
+        <span class="playlist-card__date">{{ playlist.created_at|date:"M d" }}</span>
+    </div>
+
+    <div class="playlist-card__name">{{ playlist.name }}</div>
+
+    <div class="playlist-card__meta">
+        <span>{{ playlist.track_count }} tracks</span>
+        <span class="dot">·</span>
+        <span>{{ playlist.visibility|capfirst }}</span>
+    </div>
+
+    {% if playlist.weather_used or playlist.history_used or playlist.location_label %}
+    <div class="influence-tags">
+
+        {% if playlist.weather_label %}
+        <span class="itag itag--weather">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                <path d="M9 5.5A3 3 0 1 0 4.5 2.5H4a2 2 0 0 0 0 4h5a1.5 1.5 0 0 0 0-3"/>
+            </svg>
+            {{ playlist.weather_label }}
+        </span>
+        {% endif %}
+
+        {% if playlist.history_used %}
+        <span class="itag itag--history">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                <circle cx="6" cy="6" r="4.5"/>
+                <polyline points="6,3.5 6,6 7.5,7.5"/>
+            </svg>
+            From your history
+        </span>
+        {% endif %}
+
+        {% if playlist.location_label %}
+        <span class="itag itag--location">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                <path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 7 3 7s3-4.5 3-7c0-1.7-1.3-3-3-3z"/>
+                <circle cx="6" cy="4" r="1"/>
+            </svg>
+            {{ playlist.location_label }}
+        </span>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+    {% if playlist.energy is not None %}
+    <div class="audio-bars">
+        <div class="audio-bar-row">
+            <span class="audio-bar-label">Energy</span>
+            <div class="audio-bar-track">
+                <div class="audio-bar-fill" style="width: {{ playlist.energy }}0%; background: {{ playlist.mood|mood_color }};"></div>
+            </div>
+            <span class="audio-bar-val">{{ playlist.energy }}</span>
+        </div>
+        <div class="audio-bar-row">
+            <span class="audio-bar-label">Happiness</span>
+            <div class="audio-bar-track">
+                <div class="audio-bar-fill" style="width: {{ playlist.happiness }}0%; background: {{ playlist.mood|mood_color }};"></div>
+            </div>
+            <span class="audio-bar-val">{{ playlist.happiness }}</span>
+        </div>
+        <div class="audio-bar-row">
+            <span class="audio-bar-label">Danceability</span>
+            <div class="audio-bar-track">
+                <div class="audio-bar-fill" style="width: {{ playlist.danceability }}0%; background: {{ playlist.mood|mood_color }};"></div>
+            </div>
+            <span class="audio-bar-val">{{ playlist.danceability }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <a href="{{ playlist.spotify_url }}" target="_blank" class="playlist-card__open">
+        Open in Spotify
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+    </a>
+
+</div>

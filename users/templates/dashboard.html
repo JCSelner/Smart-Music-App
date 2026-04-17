@@ -6,6 +6,7 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/playlist_card.css' %}">
     <script src="{% static 'js/theme.js' %}"></script>
 </head>
 <body>
@@ -179,23 +180,19 @@
 
                 <!-- ── Code to display a box for each separate playlist through a for loop ────────────────────────────────── -->
                 <div class="playlist-grid">
+                    {% load playlist_tags %}
                     {% for playlist in recent_playlists %}
                     <div class="playlist-card">
-                        <!-- ── Delete button in the button left ────────────────────────────────── -->
+                        <!-- ── Delete button in the bottom right ────────────────────────────────── -->
                         <form method="post" action="{% url 'delete_playlist' playlist.id %}" class="delete-form">
                             {% csrf_token %}
                             <button type="submit" class="delete-btn" onclick="return confirm('Delete this playlist?');">X</button>
                         </form>
-                        <!-- ── Header displaying the playlist name, genre, date created ────────────────────────────────── -->
                         <div class="playlist-card__header">
-                            <!-- Mood dot, optional color mapping if you don't store mood_color -->
-                                <div class="playlist-card__mood-dot"
-                                     style="background:
-                                     {% if playlist.mood == 'chill' %}#7FDBFF
-                                     {% elif playlist.mood == 'workout' %}#FF4136
-                                     {% elif playlist.mood == 'study' %}#2ECC40
-                                     {% else %}#ccc
-                                     {% endif %};"></div>
+                            <!-- Mood dot, color mapped from activity type using mood_color filter -->
+                            <div class="playlist-card__mood-dot"
+                                 style="background: {{ playlist.mood|mood_color }};"></div>
+                            <!-- ── Header displaying the playlist name, genre, date created ────────────────────────────────── -->
                             <span class="playlist-card__mood">{{ playlist.mood }}</span>
                             <span class="playlist-card__date">{{ playlist.created_at|date:"M d" }}</span>
                         </div>
@@ -206,6 +203,73 @@
                             <span class="dot">·</span>
                             <span>{{ playlist.visibility|capfirst }}</span>
                         </div>
+
+                        <!-- ── Influence tags showing what shaped this playlist ────────────────────────────────── -->
+                        {% if playlist.weather_used or playlist.history_used or playlist.location_label %}
+                        <div class="influence-tags">
+
+                            <!-- ── Weather tag ────────────────────────────────── -->
+                            {% if playlist.weather_label %}
+                            <span class="itag itag--weather">
+                                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                                    <path d="M9 5.5A3 3 0 1 0 4.5 2.5H4a2 2 0 0 0 0 4h5a1.5 1.5 0 0 0 0-3"/>
+                                </svg>
+                                {{ playlist.weather_label }}
+                            </span>
+                            {% endif %}
+
+                            <!-- ── Listening history tag ────────────────────────────────── -->
+                            {% if playlist.history_used %}
+                            <span class="itag itag--history">
+                                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                                    <circle cx="6" cy="6" r="4.5"/>
+                                    <polyline points="6,3.5 6,6 7.5,7.5"/>
+                                </svg>
+                                From your history
+                            </span>
+                            {% endif %}
+
+                            <!-- ── Location tag ────────────────────────────────── -->
+                            {% if playlist.location_label %}
+                            <span class="itag itag--location">
+                                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" width="11" height="11">
+                                    <path d="M6 1C4.3 1 3 2.3 3 4c0 2.5 3 7 3 7s3-4.5 3-7c0-1.7-1.3-3-3-3z"/>
+                                    <circle cx="6" cy="4" r="1"/>
+                                </svg>
+                                {{ playlist.location_label }}
+                            </span>
+                            {% endif %}
+
+                        </div>
+                        {% endif %}
+
+                        <!-- ── Audio feature bars showing the mood sliders used at generation ────────────────────────────────── -->
+                        {% if playlist.energy is not None %}
+                        <div class="audio-bars">
+                            <div class="audio-bar-row">
+                                <span class="audio-bar-label">Energy</span>
+                                <div class="audio-bar-track">
+                                    <div class="audio-bar-fill" style="width: {{ playlist.energy }}0%; background: {{ playlist.mood|mood_color }};"></div>
+                                </div>
+                                <span class="audio-bar-val">{{ playlist.energy }}</span>
+                            </div>
+                            <div class="audio-bar-row">
+                                <span class="audio-bar-label">Happiness</span>
+                                <div class="audio-bar-track">
+                                    <div class="audio-bar-fill" style="width: {{ playlist.happiness }}0%; background: {{ playlist.mood|mood_color }};"></div>
+                                </div>
+                                <span class="audio-bar-val">{{ playlist.happiness }}</span>
+                            </div>
+                            <div class="audio-bar-row">
+                                <span class="audio-bar-label">Danceability</span>
+                                <div class="audio-bar-track">
+                                    <div class="audio-bar-fill" style="width: {{ playlist.danceability }}0%; background: {{ playlist.mood|mood_color }};"></div>
+                                </div>
+                                <span class="audio-bar-val">{{ playlist.danceability }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <!-- ── Link to open the playlist in Spotify ────────── -->
                         <a href="{{ playlist.spotify_url }}" target="_blank" class="playlist-card__open">
                             Open in Spotify

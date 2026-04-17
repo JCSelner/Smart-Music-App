@@ -27,7 +27,7 @@ import spotipy
 import random
 import requests
 import base64
-
+from urllib.parse import urlparse
 
 # Spotify OAuth
 
@@ -122,6 +122,8 @@ def django_login(request):
 # get info for the home dashboard
 @login_required
 def dashboard(request):
+    sync_user_playlists(request.user)
+
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
     display_name = request.user.display_name or request.user.username
 
@@ -134,7 +136,7 @@ def dashboard(request):
     else:
         time_of_day = "evening"
 
-    all_playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
+    all_playlists = Playlist.objects.filter(user=request.user, is_active=True).order_by("-created_at")
     recent_playlists = all_playlists[:6]
     total_playlists = all_playlists.count()
     favorite_mood = get_favorite_mood(request.user)
@@ -234,13 +236,67 @@ def generate_page(request):
         "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
+# Helper for playlist deletion
+def extract_playlist_id(url):
+    path = urlparse(url).path
+    return path.split("/")[-1]
+
+# Helper for syncing with the Spotify Application
+def sync_user_playlists(user):
+    try:
+        sp = get_valid_spotify_client(user)
+    except Exception:
+        return
+
+    try:
+        spotify_data = sp.current_user_playlists(limit=50)
+        items = spotify_data.get("items", []) if spotify_data else []
+    except Exception:
+        return
+
+    spotify_ids = set()
+
+    for item in items:
+        if item and item.get("id"):
+            spotify_ids.add(item["id"])
+
+    db_playlists = Playlist.objects.filter(user=user, is_active=True)
+
+    for p in db_playlists:
+        spotify_id = extract_playlist_id(p.spotify_url)
+
+        if spotify_id not in spotify_ids:
+            p.is_active = False
+            p.save()
+
 # page for previously made playlists
 @login_required
 def playlists_page(request):
-    playlists = Playlist.objects.filter(user=request.user).order_by("-created_at")
+    sync_user_playlists(request.user)
+    playlists = Playlist.objects.filter(user=request.user, is_active=True).order_by("-created_at")
+
+    sp = None
+    try:
+        sp = get_valid_spotify_client(request.user)
+    except Exception:
+       pass
+
+    valid_playlists = []
+
+    for p in playlists:
+        spotify_id = extract_playlist_id(p.spotify_url)
+
+        try:
+            if sp:
+                sp.playlist(spotify_id)
+            valid_playlists.append(p)
+
+        except Exception:
+            p.is_active = False
+            p.save()
 
     return render(request, "playlists.html", {
-        "playlists": playlists,
+        "playlists": valid_playlists,
         "is_admin_user": user_is_admin(request.user),
         "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
@@ -508,21 +564,23 @@ def playlist_result(request, playlist_id):
         "playlist": playlist,
     })
 
-#playlist delete page
+
 @login_required
 def delete_playlist(request, playlist_id):
-    if request.method == "POST":
-        playlist = Playlist.objects.get(id=playlist_id, user=request.user)
-
-        try:
-            sp = get_valid_spotify_client(request.user)
-            spotify_id = playlist.spotify_url.split("/")[-1]
-            sp.current_user_unfollow_playlist(spotify_id)
-        except Exception as e:
-            print("Spotify delete failed:", e)
-
-        playlist.delete()
+    if request.method != "POST":
         return redirect("playlists")
+
+    playlist = get_object_or_404(Playlist, id=playlist_id, user=request.user)
+    spotify_id = extract_playlist_id(playlist.spotify_url)
+
+    try:
+        sp = get_valid_spotify_client(request.user)
+        sp.current_user_unfollow_playlist(spotify_id)
+    except Exception as e:
+        print("Spotify unfollow failed:", e)
+
+    playlist.delete()
+
     return redirect("playlists")
 
 # signup for webpage 

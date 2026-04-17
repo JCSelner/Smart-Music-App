@@ -52,6 +52,7 @@ class Playlist(models.Model):
     location_label = models.CharField(max_length=100, blank=True)  
 
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name} ({self.user.username})"

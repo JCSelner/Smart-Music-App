@@ -55,3 +55,24 @@ class Playlist(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.user.username})"
+
+
+class Feedback(models.Model):
+    SUBJECT_CHOICES = [
+        ("bug", "Bug Report"),
+        ("suggestion", "Suggestion"),
+        ("comment", "Comment"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="feedback"
+    )
+    subject = models.CharField(max_length=20, choices=SUBJECT_CHOICES)
+    topic = models.CharField(max_length=255)
+    description = models.TextField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.get_subject_display()}] {self.topic} — {self.user.username}"

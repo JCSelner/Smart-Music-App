@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import user_passes_test
 
 # Importing our own models and utility functions
 from users.models import User
-from .models import SpotifyToken, Playlist
+from .models import SpotifyToken, Playlist, Feedback
 from .spotify_utils import get_spotify_oauth, get_valid_spotify_client
 from .weather_utils import get_weather_data, map_weather_to_mood, get_location_suggestions
 from .dataset_utils import recommend_tracks, get_audio_baseline
@@ -871,6 +871,7 @@ def admin_dashboard(request):
     newest_users = get_newest_users(limit=8)
     recent_platform_playlists = get_recent_platform_activity(limit=8)
     most_active_users = get_most_active_users()
+    recent_feedback = Feedback.objects.select_related("user").order_by("-submitted_at")[:20]
 
     average_playlists_per_user = round(total_playlists / total_users, 2) if total_users else 0
     spotify_connection_rate = round((spotify_connected_users / total_users) * 100) if total_users else 0
@@ -898,6 +899,7 @@ def admin_dashboard(request):
         "newest_users": newest_users,
         "recent_platform_playlists": recent_platform_playlists,
         "most_active_users": most_active_users,
+        "recent_feedback": recent_feedback,
     })
 
 @login_required
@@ -963,3 +965,25 @@ def delete_user_by_admin(request, user_id):
 
     messages.success(request, f"User '{username}' was deleted successfully.")
     return redirect("admin_dashboard")
+
+
+@login_required
+def feedback_page(request):
+    if request.method == "POST":
+        subject = request.POST.get("subject", "").strip()
+        topic = request.POST.get("topic", "").strip()
+        description = request.POST.get("description", "").strip()
+
+        if subject and topic and description:
+            Feedback.objects.create(
+                user=request.user,
+                subject=subject,
+                topic=topic,
+                description=description,
+            )
+            messages.success(request, "Thank you for your feedback!")
+            return redirect("feedback")
+
+        messages.error(request, "All fields are required.")
+
+    return render(request, "feedback.html")

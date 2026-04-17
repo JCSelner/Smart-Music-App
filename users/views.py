@@ -144,15 +144,17 @@ def dashboard(request):
         "display_name": display_name,
         "spotify_linked": spotify_linked,
         "time_of_day": time_of_day,
-        "total_playlists": total_playlists,        # replace later with real queryset count
-        "top_genre": top_genre,            # replace later with Spotify data
-        "favourite_mood": favorite_mood,       # replace later with real data
-        "weather_icon": "🌤️",        # replace later with OpenWeatherMap
+        "total_playlists": total_playlists,
+        "top_genre": top_genre,
+        "favourite_mood": favorite_mood,
+        "weather_icon": "🌤️",
         "weather_temp": "—",
         "weather_condition": "—",
         "weather_location": "—",
         "weather_mood": "—",
-        "recent_playlists": recent_playlists,      # replace later with real queryset
+        "recent_playlists": recent_playlists,
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 def get_top_genre(user):
@@ -228,6 +230,8 @@ def generate_page(request):
         "weather_temp": "—",
         "weather_location": "Enter city",
         "activities": [],
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # page for previously made playlists
@@ -237,6 +241,8 @@ def playlists_page(request):
 
     return render(request, "playlists.html", {
         "playlists": playlists,
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # user's profile page
@@ -245,7 +251,6 @@ def profile_page(request):
     user = request.user
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
     display_name = user.display_name or user.username
-
     return render(request, "profile.html", {
         "display_name": display_name,
         "spotify_linked": spotify_linked,
@@ -256,6 +261,8 @@ def profile_page(request):
         "spotify_disconnect_url": reverse("spotify_logout"),
         "password_change_url": reverse("password_change"),
         "delete_account_url": reverse("delete_account"),
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # option to change db password
@@ -624,64 +631,73 @@ def fetch_listening_stats(user):
 def analytics_page(request):
     playlists = list(Playlist.objects.filter(user=request.user))
     total_playlists = len(playlists)
-    total_tracks    = sum(p.track_count for p in playlists)
+    total_tracks = sum(p.track_count for p in playlists)
+    top_genre = get_top_genre(request.user)
 
-    # Visibility breakdown
     mood_counts = Counter(p.mood for p in playlists if p.mood)
-    top_mood    = mood_counts.most_common(1)[0][0] if mood_counts else "—"
-    max_mood    = max(mood_counts.values(), default=1)
+    top_mood = mood_counts.most_common(1)[0][0] if mood_counts else "—"
+    max_mood = max(mood_counts.values(), default=1)
     mood_breakdown = [
-        {"label": label, "count": count, "pct": round(count / max_mood * 100),
-         "color": MOOD_COLORS.get(label, _DEFAULT_COLOR)}
+        {
+            "label": label,
+            "count": count,
+            "pct": round(count / max_mood * 100),
+            "color": MOOD_COLORS.get(label, _DEFAULT_COLOR)
+        }
         for label, count in mood_counts.most_common()
     ]
 
-    public_count   = sum(1 for p in playlists if p.visibility == "public")
-    private_count  = total_playlists - public_count
-    public_pct     = round(public_count / total_playlists * 100) if total_playlists else 0
-    private_pct    = 100 - public_pct
+    public_count = sum(1 for p in playlists if p.visibility == "public")
+    private_count = total_playlists - public_count
+    public_pct = round(public_count / total_playlists * 100) if total_playlists else 0
+    private_pct = 100 - public_pct
     private_offset = 25 + public_pct
 
-    # Monthly creation timeline
     now = datetime.now()
     month_counts = Counter()
     for p in playlists:
         month_counts[p.created_at.strftime("%b %Y")] += 1
+
     ordered_months = []
     for i in range(11, -1, -1):
         month_num = now.month - i
-        year      = now.year + (month_num - 1) // 12
+        year = now.year + (month_num - 1) // 12
         month_num = ((month_num - 1) % 12) + 1
         ordered_months.append(datetime(year, month_num, 1).strftime("%b %Y"))
+
     max_monthly = max((month_counts.get(m, 0) for m in ordered_months), default=1) or 1
     monthly_counts = [
-        {"label": m[:3], "count": month_counts.get(m, 0),
-         "pct": round(month_counts.get(m, 0) / max_monthly * 100)}
+        {
+            "label": m[:3],
+            "count": month_counts.get(m, 0),
+            "pct": round(month_counts.get(m, 0) / max_monthly * 100)
+        }
         for m in ordered_months
     ]
 
-    # Spotify listening stats
     listening = fetch_listening_stats(request.user)
 
     return render(request, "analytics.html", {
-        "total_playlists":      total_playlists,
-        "total_tracks":         total_tracks,
-        "top_mood":             top_mood,
-        "mood_breakdown":       mood_breakdown,
-        "public_count":         public_count,
-        "private_count":        private_count,
-        "public_pct":           public_pct,
-        "private_pct":          private_pct,
-        "private_offset":       private_offset,
-        "monthly_counts":       monthly_counts,
+        "total_playlists": total_playlists,
+        "total_tracks": total_tracks,
+        "top_mood": top_mood,
+        "top_genre": top_genre,
+        "mood_breakdown": mood_breakdown,
+        "public_count": public_count,
+        "private_count": private_count,
+        "public_pct": public_pct,
+        "private_pct": private_pct,
+        "private_offset": private_offset,
+        "monthly_counts": monthly_counts,
         "listening_time_label": listening["time_label"],
-        "listening_total_min":  listening["total_minutes"],
-        "listening_daily":      listening["daily_breakdown"],
+        "listening_total_min": listening["total_minutes"],
+        "listening_daily": listening["daily_breakdown"],
         "listening_top_recent": listening["top_recent"],
-        "spotify_linked":       listening["spotify_linked"],
-        "needs_reauth":         listening["needs_reauth"],
+        "spotify_linked": listening["spotify_linked"],
+        "needs_reauth": listening["needs_reauth"],
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
-
 def user_is_manager_or_admin(user):
     """
     Returns True when the authenticated user has elevated app permissions.
@@ -813,3 +829,55 @@ def get_newest_users(limit=8):
     includes a date_joined field.
     """
     return User.objects.order_by("-date_joined")[:limit]
+
+@login_required
+@user_passes_test(user_is_admin)
+def admin_dashboard(request):
+    """
+    Platform-wide admin dashboard.
+    Visible only to users whose role is exactly 'admin'.
+    """
+
+    total_users = User.objects.count()
+    total_playlists = Playlist.objects.count()
+    total_tracks = Playlist.objects.aggregate(
+        total_track_sum=Sum("track_count")
+    )["total_track_sum"] or 0
+    spotify_connected_users = SpotifyToken.objects.count()
+
+    role_breakdown = get_user_role_breakdown()
+    visibility_breakdown = get_playlist_visibility_breakdown()
+    platform_mood_breakdown = get_platform_mood_breakdown()
+    platform_genre_breakdown = get_platform_genre_breakdown()
+
+    newest_users = get_newest_users(limit=8)
+    recent_platform_playlists = get_recent_platform_activity(limit=8)
+    most_active_users = get_most_active_users(limit=8)
+
+    average_playlists_per_user = round(total_playlists / total_users, 2) if total_users else 0
+    spotify_connection_rate = round((spotify_connected_users / total_users) * 100) if total_users else 0
+
+    return render(request, "admin_dashboard.html", {
+        "total_users": total_users,
+        "total_playlists": total_playlists,
+        "total_tracks": total_tracks,
+        "spotify_connected_users": spotify_connected_users,
+        "spotify_connection_rate": spotify_connection_rate,
+        "average_playlists_per_user": average_playlists_per_user,
+
+        "admin_count": role_breakdown["admin_count"],
+        "manager_count": role_breakdown["manager_count"],
+        "user_count": role_breakdown["user_count"],
+
+        "public_count": visibility_breakdown["public_count"],
+        "private_count": visibility_breakdown["private_count"],
+        "public_pct": visibility_breakdown["public_pct"],
+        "private_pct": visibility_breakdown["private_pct"],
+
+        "platform_mood_breakdown": platform_mood_breakdown,
+        "platform_genre_breakdown": platform_genre_breakdown,
+
+        "newest_users": newest_users,
+        "recent_platform_playlists": recent_platform_playlists,
+        "most_active_users": most_active_users,
+    })

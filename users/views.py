@@ -728,17 +728,16 @@ def get_recent_platform_activity(limit=8):
         .order_by("-created_at")[:limit]
     )
 
-
-def get_most_active_users(limit=6):
+def get_most_active_users():
     """
-    Returns users ordered by playlist count and then username.
-    This powers the 'most active users' panel on the admin dashboard.
+    Returns all users ordered by playlist count and then username.
+    Used by the admin dashboard user management table.
     """
     return (
         User.objects.annotate(
             playlist_total=Count("playlists")
         )
-        .order_by("-playlist_total", "username")[:limit]
+        .order_by("-playlist_total", "username")
     )
 
 
@@ -852,7 +851,7 @@ def admin_dashboard(request):
 
     newest_users = get_newest_users(limit=8)
     recent_platform_playlists = get_recent_platform_activity(limit=8)
-    most_active_users = get_most_active_users(limit=8)
+    most_active_users = get_most_active_users()
 
     average_playlists_per_user = round(total_playlists / total_users, 2) if total_users else 0
     spotify_connection_rate = round((spotify_connected_users / total_users) * 100) if total_users else 0
@@ -914,4 +913,34 @@ def update_user_role(request, user_id):
         request,
         f"Updated {target_user.username} from {old_role} to {new_role}."
     )
+    return redirect("admin_dashboard")
+
+@login_required
+@user_passes_test(user_is_admin)
+def delete_user_by_admin(request, user_id):
+    """
+    Admin-only action to delete a user from the custom admin dashboard.
+    POST only.
+    """
+    if request.method != "POST":
+        return redirect("admin_dashboard")
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Prevent deleting yourself from the admin dashboard
+    if target_user == request.user:
+        messages.error(request, "You cannot delete your own account from the admin dashboard.")
+        return redirect("admin_dashboard")
+
+    # Optional protection: do not allow deleting the last admin
+    if target_user.role == "admin":
+        admin_count = User.objects.filter(role="admin").count()
+        if admin_count <= 1:
+            messages.error(request, "You cannot delete the last remaining admin.")
+            return redirect("admin_dashboard")
+
+    username = target_user.username
+    target_user.delete()
+
+    messages.success(request, f"User '{username}' was deleted successfully.")
     return redirect("admin_dashboard")

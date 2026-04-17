@@ -146,35 +146,35 @@
                             <strong class="admin-role-card__value">{{ admin_count }}</strong>
                         </div>
                         <div class="admin-role-card">
-                            <span class="admin-role-card__label">Managers</span>
-                            <strong class="admin-role-card__value">{{ manager_count }}</strong>
-                        </div>
-                        <div class="admin-role-card">
                             <span class="admin-role-card__label">Users</span>
                             <strong class="admin-role-card__value">{{ user_count }}</strong>
                         </div>
                     </div>
                 </section>
 
-                <section class="analytics-card">
+                <section class="analytics-card analytics-card--side visibility-card">
                     <div class="analytics-card__title">Visibility Split</div>
-                    <div class="analytics-card__desc">Public vs private playlists site-wide</div>
-
-                    <div class="mini-stat-stack">
-                        <div class="mini-stat-row">
-                            <span>Public</span>
-                            <strong>{{ public_count }}</strong>
+                    <div class="analytics-card__desc">Public vs private playlists across the platform</div>
+                
+                    <div class="visibility-stack">
+                        <div class="visibility-item">
+                            <div class="visibility-item__head">
+                                <span>Public</span>
+                                <strong>{{ public_count }}</strong>
+                            </div>
+                            <div class="visibility-track">
+                                <div class="visibility-fill visibility-fill--public" style="width: {{ public_pct }}%;"></div>
+                            </div>
                         </div>
-                        <div class="mini-progress">
-                            <div class="mini-progress__fill mini-progress__fill--public" style="width: {{ public_pct }}%;"></div>
-                        </div>
-
-                        <div class="mini-stat-row">
-                            <span>Private</span>
-                            <strong>{{ private_count }}</strong>
-                        </div>
-                        <div class="mini-progress">
-                            <div class="mini-progress__fill mini-progress__fill--private" style="width: {{ private_pct }}%;"></div>
+                
+                        <div class="visibility-item">
+                            <div class="visibility-item__head">
+                                <span>Private</span>
+                                <strong>{{ private_count }}</strong>
+                            </div>
+                            <div class="visibility-track">
+                                <div class="visibility-fill visibility-fill--private" style="width: {{ private_pct }}%;"></div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -197,60 +197,64 @@
                         {% endfor %}
                     </div>
                 </section>
-
-                <section class="analytics-card">
-                    <div class="analytics-card__title">Top Genres</div>
-                    <div class="analytics-card__desc">Most common generated playlist genres</div>
-
-                    <div class="bar-chart bar-chart--compact">
-                        {% for item in platform_genre_breakdown %}
-                        <div class="bar-row">
-                            <span class="bar-label">{{ item.label }}</span>
-                            <div class="bar-track">
-                                <div class="bar-fill bar-fill--genre" style="width: {{ item.pct }}%;"></div>
-                            </div>
-                            <span class="bar-count">{{ item.count }}</span>
-                        </div>
-                        {% empty %}
-                        <p class="analytics-card__empty">No genre data available yet.</p>
-                        {% endfor %}
-                    </div>
-                </section>
-
                 <section class="analytics-card analytics-card--full">
-                    <div class="analytics-card__title">Most Active Users</div>
-                    <div class="analytics-card__desc">Accounts with the highest playlist totals</div>
-
-                    <div class="admin-table">
-                        <div class="admin-table__head">
+                    <div class="analytics-card__title">User Management</div>
+                    <div class="analytics-card__desc">Promote, demote, or remove users from the platform</div>
+                
+                    <div class="admin-table admin-table--users">
+                        <div class="admin-table__head admin-table__head--users">
                             <span>Username</span>
                             <span>Display Name</span>
                             <span>Role</span>
                             <span>Playlists</span>
                             <span>Actions</span>
                         </div>
-                        
-                        {% for platform_user in most_active_users %}
-                        <div class="admin-table__row admin-table__row--actions">
-                            <span>{{ platform_user.username }}</span>
-                            <span>{{ platform_user.display_name|default:"—" }}</span>
-                            <span>{{ platform_user.role|capfirst }}</span>
-                            <span>{{ platform_user.playlist_total }}</span>
-                        
-                            <form method="post" action="{% url 'update_user_role' platform_user.id %}" class="role-form">
-                                {% csrf_token %}
-                                <select name="role" class="role-select">
-                                    <option value="user" {% if platform_user.role == "user" %}selected{% endif %}>User</option>
-                                    <option value="manager" {% if platform_user.role == "manager" %}selected{% endif %}>Manager</option>
-                                    <option value="admin" {% if platform_user.role == "admin" %}selected{% endif %}>Admin</option>
-                                </select>
-                                <button type="submit" class="role-save-btn">Save</button>
-                            </form>
+                
+                        <div class="admin-table__body admin-table__body--scroll">
+                            {% for platform_user in most_active_users %}
+                            <div class="admin-table__row admin-table__row--users">
+                                <span class="admin-cell admin-cell--truncate" title="{{ platform_user.username }}">
+                                    {{ platform_user.username }}
+                                </span>
+                
+                                <span class="admin-cell admin-cell--truncate" title="{{ platform_user.display_name|default:'—' }}">
+                                    {{ platform_user.display_name|default:"—" }}
+                                </span>
+                
+                                <span class="admin-cell">
+                                    {{ platform_user.role|capfirst }}
+                                </span>
+                
+                                <span class="admin-cell">
+                                    {{ platform_user.playlist_total }}
+                                </span>
+                
+                                <div class="admin-actions">
+                                    <form method="post"
+                                          action="{% url 'update_user_role' platform_user.id %}"
+                                          class="role-form">
+                                        {% csrf_token %}
+                                        <select name="role" class="role-select">
+                                            <option value="user" {% if platform_user.role == "user" %}selected{% endif %}>User</option>
+                                            <option value="admin" {% if platform_user.role == "admin" %}selected{% endif %}>Admin</option>
+                                        </select>
+                                        <button type="submit" class="role-save-btn">Save</button>
+                                    </form>
+                
+                                    <form method="post"
+                                          action="{% url 'delete_user_by_admin' platform_user.id %}"
+                                          onsubmit="return confirm('Delete user {{ platform_user.username }}? This cannot be undone.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="role-delete-btn">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="analytics-card__empty">No users found.</p>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
                 </section>
-
                 <section class="analytics-card analytics-card--wide">
                     <div class="analytics-card__title">Newest Users</div>
                     <div class="analytics-card__desc">Most recent registered accounts</div>

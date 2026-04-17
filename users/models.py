@@ -6,9 +6,8 @@ from django.db import models
 
 class User(AbstractUser):
     USER_ROLE_CHOICES = [
-        ("user", "User"),
-        ("manager", "Manager"),
-        ("admin", "Admin"),
+    ("user", "User"),
+    ("admin", "Admin"),
     ]
     role = models.CharField(max_length=20, choices=USER_ROLE_CHOICES, default="user")
     display_name = models.CharField(max_length=255, blank=True)

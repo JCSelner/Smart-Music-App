@@ -1,0 +1,118 @@
+
+
+/*  Influence tags  */
+.influence-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.itag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+/* Weather — teal */
+.itag--weather {
+    background: rgba(29, 158, 117, 0.12);
+    border-color: rgba(29, 158, 117, 0.30);
+    color: #0f6e56;
+}
+html[data-theme="dark"] .itag--weather {
+    background: rgba(29, 158, 117, 0.18);
+    border-color: rgba(93, 202, 165, 0.35);
+    color: #9fe1cb;
+}
+
+/* Listening history — amber */
+.itag--history {
+    background: rgba(186, 117, 23, 0.10);
+    border-color: rgba(186, 117, 23, 0.28);
+    color: #854f0b;
+}
+html[data-theme="dark"] .itag--history {
+    background: rgba(186, 117, 23, 0.18);
+    border-color: rgba(239, 159, 39, 0.35);
+    color: #fac775;
+}
+
+/* Location — blue */
+.itag--location {
+    background: rgba(55, 138, 221, 0.10);
+    border-color: rgba(55, 138, 221, 0.28);
+    color: #0c447c;
+}
+html[data-theme="dark"] .itag--location {
+    background: rgba(55, 138, 221, 0.18);
+    border-color: rgba(133, 183, 235, 0.35);
+    color: #b5d4f4;
+}
+
+/*  Audio feature mini-bars  */
+.audio-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.audio-bar-row {
+    display: grid;
+    grid-template-columns: 72px 1fr 20px;
+    align-items: center;
+    gap: 8px;
+}
+
+.audio-bar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.audio-bar-track {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+html[data-theme="light"] .audio-bar-track {
+    background: rgba(15, 23, 42, 0.08);
+}
+
+.audio-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    opacity: 0.75;
+    transition: width 0.4s ease;
+}
+
+.audio-bar-val {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: right;
+}
+
+/*  Tighten card layout to accommodate new rows  */
+.playlist-card {
+    gap: 10px;  
+}
+
+.playlist-card__open {
+    margin-top: 4px;  
+}

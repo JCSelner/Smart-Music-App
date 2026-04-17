@@ -36,14 +36,21 @@ class Playlist(models.Model):
 
     name = models.CharField(max_length=255)
     spotify_url = models.URLField()
-
     track_count = models.IntegerField()
 
     mood = models.CharField(max_length=50, blank=True)
-    genre = models.CharField(max_length=100, blank=True)   # <-- NEW
+    genre = models.CharField(max_length=100, blank=True)
     weather_context = models.CharField(max_length=50, blank=True)
-
     visibility = models.CharField(max_length=10, default="private")
+
+    # Influence fields — stored at generation time so history cards are self-contained
+    energy = models.IntegerField(null=True, blank=True)           
+    happiness = models.IntegerField(null=True, blank=True)        
+    danceability = models.IntegerField(null=True, blank=True)     
+    weather_label = models.CharField(max_length=100, blank=True)  
+    weather_used = models.BooleanField(default=False)
+    history_used = models.BooleanField(default=False)
+    location_label = models.CharField(max_length=100, blank=True)  
 
     created_at = models.DateTimeField(auto_now_add=True)
 

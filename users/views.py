@@ -322,6 +322,8 @@ def generate_playlist(request):
 
     weather = None
     weather_features = None
+    weather_label = ""
+    location_label = location   
 
     if use_weather:
         if location:
@@ -331,6 +333,16 @@ def generate_playlist(request):
 
         if weather:
             weather_features = map_weather_to_mood(weather)
+            # Build readable label, e.g.Rainy, 54°F
+            condition = (weather.get("conditions") or "").capitalize()
+            temp = weather.get("temperature")
+            city = weather.get("city") or location
+            if condition and temp is not None:
+                weather_label = f"{condition}, {round(temp)}°F"
+            elif condition:
+                weather_label = condition
+            if city and not location_label:
+                location_label = city
 
     # 1. Fetch user context for better recommendations
     user_genres = []
@@ -467,8 +479,15 @@ def generate_playlist(request):
         genre=playlist_genre,
         weather_context=weather_features if weather_features else "",
         visibility=visibility,
+        # Influence fields
+        energy=energy,
+        happiness=happiness,
+        danceability=danceability,
+        weather_label=weather_label,
+        weather_used=bool(weather_label),
+        history_used=use_history and bool(top_items),
+        location_label=location_label,
     )
-    print("PLAYLIST RESPONSE:", playlist)
     return redirect("playlist_result", playlist_id=playlist_record.id)
 
 

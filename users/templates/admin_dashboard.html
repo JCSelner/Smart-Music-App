@@ -227,17 +227,26 @@
                             <span>Display Name</span>
                             <span>Role</span>
                             <span>Playlists</span>
+                            <span>Actions</span>
                         </div>
-
+                        
                         {% for platform_user in most_active_users %}
-                        <div class="admin-table__row">
+                        <div class="admin-table__row admin-table__row--actions">
                             <span>{{ platform_user.username }}</span>
                             <span>{{ platform_user.display_name|default:"—" }}</span>
                             <span>{{ platform_user.role|capfirst }}</span>
                             <span>{{ platform_user.playlist_total }}</span>
+                        
+                            <form method="post" action="{% url 'update_user_role' platform_user.id %}" class="role-form">
+                                {% csrf_token %}
+                                <select name="role" class="role-select">
+                                    <option value="user" {% if platform_user.role == "user" %}selected{% endif %}>User</option>
+                                    <option value="manager" {% if platform_user.role == "manager" %}selected{% endif %}>Manager</option>
+                                    <option value="admin" {% if platform_user.role == "admin" %}selected{% endif %}>Admin</option>
+                                </select>
+                                <button type="submit" class="role-save-btn">Save</button>
+                            </form>
                         </div>
-                        {% empty %}
-                        <p class="analytics-card__empty">No users found.</p>
                         {% endfor %}
                     </div>
                 </section>

@@ -297,3 +297,43 @@
         align-items: flex-start;
     }
 }
+
+.admin-table__head,
+.admin-table__row.admin-table__row--actions {
+    display: grid;
+    grid-template-columns: 1.3fr 1.3fr 0.8fr 0.8fr 1.6fr;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 14px;
+}
+
+.role-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.role-select {
+    min-width: 110px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+}
+
+.role-save-btn {
+    border: none;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+    color: var(--bg-base);
+}

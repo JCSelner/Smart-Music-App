@@ -881,3 +881,37 @@ def admin_dashboard(request):
         "recent_platform_playlists": recent_platform_playlists,
         "most_active_users": most_active_users,
     })
+
+@login_required
+@user_passes_test(user_is_admin)
+def update_user_role(request, user_id):
+    """
+    Admin-only action for changing a user's role from the admin dashboard.
+    Accepts POST only.
+    """
+    if request.method != "POST":
+        return redirect("admin_dashboard")
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    new_role = request.POST.get("role", "").strip().lower()
+    allowed_roles = {"user", "manager", "admin"}
+
+    if new_role not in allowed_roles:
+        messages.error(request, "Invalid role selected.")
+        return redirect("admin_dashboard")
+
+    # Optional safety check: prevent admin from demoting themselves accidentally
+    if target_user == request.user and new_role != "admin":
+        messages.error(request, "You cannot remove your own admin access.")
+        return redirect("admin_dashboard")
+
+    old_role = target_user.role
+    target_user.role = new_role
+    target_user.save()
+
+    messages.success(
+        request,
+        f"Updated {target_user.username} from {old_role} to {new_role}."
+    )
+    return redirect("admin_dashboard")

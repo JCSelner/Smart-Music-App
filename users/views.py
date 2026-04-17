@@ -8,6 +8,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
+from django.db.models import Count, Sum
+from django.contrib.auth.decorators import user_passes_test
 
 # Importing our own models and utility functions
 from users.models import User
@@ -142,15 +144,17 @@ def dashboard(request):
         "display_name": display_name,
         "spotify_linked": spotify_linked,
         "time_of_day": time_of_day,
-        "total_playlists": total_playlists,        # replace later with real queryset count
-        "top_genre": top_genre,            # replace later with Spotify data
-        "favourite_mood": favorite_mood,       # replace later with real data
-        "weather_icon": "🌤️",        # replace later with OpenWeatherMap
+        "total_playlists": total_playlists,
+        "top_genre": top_genre,
+        "favourite_mood": favorite_mood,
+        "weather_icon": "🌤️",
         "weather_temp": "—",
         "weather_condition": "—",
         "weather_location": "—",
         "weather_mood": "—",
-        "recent_playlists": recent_playlists,      # replace later with real queryset
+        "recent_playlists": recent_playlists,
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 def get_top_genre(user):
@@ -226,6 +230,8 @@ def generate_page(request):
         "weather_temp": "—",
         "weather_location": "Enter city",
         "activities": [],
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # page for previously made playlists
@@ -235,6 +241,8 @@ def playlists_page(request):
 
     return render(request, "playlists.html", {
         "playlists": playlists,
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # user's profile page
@@ -243,7 +251,6 @@ def profile_page(request):
     user = request.user
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
     display_name = user.display_name or user.username
-
     return render(request, "profile.html", {
         "display_name": display_name,
         "spotify_linked": spotify_linked,
@@ -254,6 +261,8 @@ def profile_page(request):
         "spotify_disconnect_url": reverse("spotify_logout"),
         "password_change_url": reverse("password_change"),
         "delete_account_url": reverse("delete_account"),
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
 
 # option to change db password
@@ -641,60 +650,316 @@ def fetch_listening_stats(user):
 def analytics_page(request):
     playlists = list(Playlist.objects.filter(user=request.user))
     total_playlists = len(playlists)
-    total_tracks    = sum(p.track_count for p in playlists)
+    total_tracks = sum(p.track_count for p in playlists)
+    top_genre = get_top_genre(request.user)
 
-    # Visibility breakdown
     mood_counts = Counter(p.mood for p in playlists if p.mood)
-    top_mood    = mood_counts.most_common(1)[0][0] if mood_counts else "—"
-    max_mood    = max(mood_counts.values(), default=1)
+    top_mood = mood_counts.most_common(1)[0][0] if mood_counts else "—"
+    max_mood = max(mood_counts.values(), default=1)
     mood_breakdown = [
-        {"label": label, "count": count, "pct": round(count / max_mood * 100),
-         "color": MOOD_COLORS.get(label, _DEFAULT_COLOR)}
+        {
+            "label": label,
+            "count": count,
+            "pct": round(count / max_mood * 100),
+            "color": MOOD_COLORS.get(label, _DEFAULT_COLOR)
+        }
         for label, count in mood_counts.most_common()
     ]
 
-    public_count   = sum(1 for p in playlists if p.visibility == "public")
-    private_count  = total_playlists - public_count
-    public_pct     = round(public_count / total_playlists * 100) if total_playlists else 0
-    private_pct    = 100 - public_pct
+    public_count = sum(1 for p in playlists if p.visibility == "public")
+    private_count = total_playlists - public_count
+    public_pct = round(public_count / total_playlists * 100) if total_playlists else 0
+    private_pct = 100 - public_pct
     private_offset = 25 + public_pct
 
-    # Monthly creation timeline
     now = datetime.now()
     month_counts = Counter()
     for p in playlists:
         month_counts[p.created_at.strftime("%b %Y")] += 1
+
     ordered_months = []
     for i in range(11, -1, -1):
         month_num = now.month - i
-        year      = now.year + (month_num - 1) // 12
+        year = now.year + (month_num - 1) // 12
         month_num = ((month_num - 1) % 12) + 1
         ordered_months.append(datetime(year, month_num, 1).strftime("%b %Y"))
+
     max_monthly = max((month_counts.get(m, 0) for m in ordered_months), default=1) or 1
     monthly_counts = [
-        {"label": m[:3], "count": month_counts.get(m, 0),
-         "pct": round(month_counts.get(m, 0) / max_monthly * 100)}
+        {
+            "label": m[:3],
+            "count": month_counts.get(m, 0),
+            "pct": round(month_counts.get(m, 0) / max_monthly * 100)
+        }
         for m in ordered_months
     ]
 
-    # Spotify listening stats
     listening = fetch_listening_stats(request.user)
 
     return render(request, "analytics.html", {
-        "total_playlists":      total_playlists,
-        "total_tracks":         total_tracks,
-        "top_mood":             top_mood,
-        "mood_breakdown":       mood_breakdown,
-        "public_count":         public_count,
-        "private_count":        private_count,
-        "public_pct":           public_pct,
-        "private_pct":          private_pct,
-        "private_offset":       private_offset,
-        "monthly_counts":       monthly_counts,
+        "total_playlists": total_playlists,
+        "total_tracks": total_tracks,
+        "top_mood": top_mood,
+        "top_genre": top_genre,
+        "mood_breakdown": mood_breakdown,
+        "public_count": public_count,
+        "private_count": private_count,
+        "public_pct": public_pct,
+        "private_pct": private_pct,
+        "private_offset": private_offset,
+        "monthly_counts": monthly_counts,
         "listening_time_label": listening["time_label"],
-        "listening_total_min":  listening["total_minutes"],
-        "listening_daily":      listening["daily_breakdown"],
+        "listening_total_min": listening["total_minutes"],
+        "listening_daily": listening["daily_breakdown"],
         "listening_top_recent": listening["top_recent"],
-        "spotify_linked":       listening["spotify_linked"],
-        "needs_reauth":         listening["needs_reauth"],
+        "spotify_linked": listening["spotify_linked"],
+        "needs_reauth": listening["needs_reauth"],
+        "is_admin_user": user_is_admin(request.user),
+        "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
+def user_is_manager_or_admin(user):
+    """
+    Returns True when the authenticated user has elevated app permissions.
+    Keeps the role check in one place so it is easy to expand later.
+    """
+    if not user.is_authenticated:
+        return False
+    return getattr(user, "role", "user") in ["manager", "admin"]
+
+
+def user_is_admin(user):
+    """
+    Strict admin-only access check.
+    Use this for pages that should not be visible to regular users or managers.
+    """
+    if not user.is_authenticated:
+        return False
+    return getattr(user, "role", "user") == "admin"
+
+
+def get_recent_platform_activity(limit=8):
+    """
+    Fetches the most recent playlists created across the whole platform.
+    Returned as a queryset sliced to the requested limit.
+    """
+    return (
+        Playlist.objects.select_related("user")
+        .order_by("-created_at")[:limit]
+    )
+
+def get_most_active_users():
+    """
+    Returns all users ordered by playlist count and then username.
+    Used by the admin dashboard user management table.
+    """
+    return (
+        User.objects.annotate(
+            playlist_total=Count("playlists")
+        )
+        .order_by("-playlist_total", "username")
+    )
+
+
+def get_user_role_breakdown():
+    """
+    Returns a simple role distribution for display cards and tables.
+    Handles empty datasets safely.
+    """
+    role_counts = Counter(
+        User.objects.values_list("role", flat=True)
+    )
+
+    return {
+        "admin_count": role_counts.get("admin", 0),
+        "manager_count": role_counts.get("manager", 0),
+        "user_count": role_counts.get("user", 0),
+    }
+
+
+def get_playlist_visibility_breakdown():
+    """
+    Returns counts for public/private playlists across the full platform.
+    Also includes percentages for visualization.
+    """
+    total_playlists = Playlist.objects.count()
+    public_count = Playlist.objects.filter(visibility="public").count()
+    private_count = total_playlists - public_count
+
+    public_pct = round((public_count / total_playlists) * 100) if total_playlists else 0
+    private_pct = 100 - public_pct if total_playlists else 0
+
+    return {
+        "public_count": public_count,
+        "private_count": private_count,
+        "public_pct": public_pct,
+        "private_pct": private_pct,
+    }
+
+
+def get_platform_mood_breakdown():
+    """
+    Returns mood usage across all playlists in the platform.
+    Format matches your existing analytics bar chart style.
+    """
+    mood_counts = Counter(
+        Playlist.objects.exclude(mood="").values_list("mood", flat=True)
+    )
+
+    max_count = max(mood_counts.values(), default=1)
+
+    return [
+        {
+            "label": label,
+            "count": count,
+            "pct": round((count / max_count) * 100) if max_count else 0,
+            "color": MOOD_COLORS.get(label, _DEFAULT_COLOR),
+        }
+        for label, count in mood_counts.most_common()
+    ]
+
+
+def get_platform_genre_breakdown(limit=8):
+    """
+    Returns the most common genres across all generated playlists.
+    This is intentionally separate from user analytics so the admin page
+    can show platform-wide content trends.
+    """
+    genre_counts = Counter(
+        Playlist.objects.exclude(genre="").values_list("genre", flat=True)
+    )
+
+    max_count = max(genre_counts.values(), default=1)
+
+    return [
+        {
+            "label": label,
+            "count": count,
+            "pct": round((count / max_count) * 100) if max_count else 0,
+        }
+        for label, count in genre_counts.most_common(limit)
+    ]
+
+
+def get_newest_users(limit=8):
+    """
+    Returns the newest registered users for the admin dashboard.
+    Assumes the custom user model inherits AbstractUser and therefore
+    includes a date_joined field.
+    """
+    return User.objects.order_by("-date_joined")[:limit]
+
+@login_required
+@user_passes_test(user_is_admin)
+def admin_dashboard(request):
+    """
+    Platform-wide admin dashboard.
+    Visible only to users whose role is exactly 'admin'.
+    """
+
+    total_users = User.objects.count()
+    total_playlists = Playlist.objects.count()
+    total_tracks = Playlist.objects.aggregate(
+        total_track_sum=Sum("track_count")
+    )["total_track_sum"] or 0
+    spotify_connected_users = SpotifyToken.objects.count()
+
+    role_breakdown = get_user_role_breakdown()
+    visibility_breakdown = get_playlist_visibility_breakdown()
+    platform_mood_breakdown = get_platform_mood_breakdown()
+    platform_genre_breakdown = get_platform_genre_breakdown()
+
+    newest_users = get_newest_users(limit=8)
+    recent_platform_playlists = get_recent_platform_activity(limit=8)
+    most_active_users = get_most_active_users()
+
+    average_playlists_per_user = round(total_playlists / total_users, 2) if total_users else 0
+    spotify_connection_rate = round((spotify_connected_users / total_users) * 100) if total_users else 0
+
+    return render(request, "admin_dashboard.html", {
+        "total_users": total_users,
+        "total_playlists": total_playlists,
+        "total_tracks": total_tracks,
+        "spotify_connected_users": spotify_connected_users,
+        "spotify_connection_rate": spotify_connection_rate,
+        "average_playlists_per_user": average_playlists_per_user,
+
+        "admin_count": role_breakdown["admin_count"],
+        "manager_count": role_breakdown["manager_count"],
+        "user_count": role_breakdown["user_count"],
+
+        "public_count": visibility_breakdown["public_count"],
+        "private_count": visibility_breakdown["private_count"],
+        "public_pct": visibility_breakdown["public_pct"],
+        "private_pct": visibility_breakdown["private_pct"],
+
+        "platform_mood_breakdown": platform_mood_breakdown,
+        "platform_genre_breakdown": platform_genre_breakdown,
+
+        "newest_users": newest_users,
+        "recent_platform_playlists": recent_platform_playlists,
+        "most_active_users": most_active_users,
+    })
+
+@login_required
+@user_passes_test(user_is_admin)
+def update_user_role(request, user_id):
+    """
+    Admin-only action for changing a user's role from the admin dashboard.
+    Accepts POST only.
+    """
+    if request.method != "POST":
+        return redirect("admin_dashboard")
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    new_role = request.POST.get("role", "").strip().lower()
+    allowed_roles = {"user", "manager", "admin"}
+
+    if new_role not in allowed_roles:
+        messages.error(request, "Invalid role selected.")
+        return redirect("admin_dashboard")
+
+    # Optional safety check: prevent admin from demoting themselves accidentally
+    if target_user == request.user and new_role != "admin":
+        messages.error(request, "You cannot remove your own admin access.")
+        return redirect("admin_dashboard")
+
+    old_role = target_user.role
+    target_user.role = new_role
+    target_user.save()
+
+    messages.success(
+        request,
+        f"Updated {target_user.username} from {old_role} to {new_role}."
+    )
+    return redirect("admin_dashboard")
+
+@login_required
+@user_passes_test(user_is_admin)
+def delete_user_by_admin(request, user_id):
+    """
+    Admin-only action to delete a user from the custom admin dashboard.
+    POST only.
+    """
+    if request.method != "POST":
+        return redirect("admin_dashboard")
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    # Prevent deleting yourself from the admin dashboard
+    if target_user == request.user:
+        messages.error(request, "You cannot delete your own account from the admin dashboard.")
+        return redirect("admin_dashboard")
+
+    # Optional protection: do not allow deleting the last admin
+    if target_user.role == "admin":
+        admin_count = User.objects.filter(role="admin").count()
+        if admin_count <= 1:
+            messages.error(request, "You cannot delete the last remaining admin.")
+            return redirect("admin_dashboard")
+
+    username = target_user.username
+    target_user.delete()
+
+    messages.success(request, f"User '{username}' was deleted successfully.")
+    return redirect("admin_dashboard")

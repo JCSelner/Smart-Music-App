@@ -21,4 +21,7 @@ urlpatterns = [
     path("api/location-suggest/", views.get_location_suggest, name="get_location_suggest"),
     path("playlist/delete/<int:playlist_id>/", views.delete_playlist, name="delete_playlist"),
     path("analytics/", views.analytics_page, name="analytics"),
+    path("admin-dashboard/", views.admin_dashboard, name="admin_dashboard"),
+    path("admin-dashboard/users/<int:user_id>/role/", views.update_user_role, name="update_user_role"),
+    path("admin-dashboard/users/<int:user_id>/delete/", views.delete_user_by_admin, name="delete_user_by_admin"),
 ]

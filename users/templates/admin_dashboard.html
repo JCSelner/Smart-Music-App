@@ -300,6 +300,28 @@
                         {% endfor %}
                     </div>
                 </section>
+                <section class="analytics-card analytics-card--full">
+                    <div class="analytics-card__title">Recent Feedback</div>
+                    <div class="analytics-card__desc">Latest submissions from users</div>
+
+                    <div class="activity-list">
+                        {% for item in recent_feedback %}
+                        <div class="activity-list__row">
+                            <div class="activity-list__primary">
+                                <span class="activity-list__title">{{ item.topic }}</span>
+                                <span class="activity-list__sub">{{ item.description }}</span>
+                            </div>
+                            <div class="activity-list__meta">
+                                <span>{{ item.get_subject_display }}</span>
+                                <span>{{ item.user.username }}</span>
+                                <span>{{ item.submitted_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <p class="analytics-card__empty">No feedback submitted yet.</p>
+                        {% endfor %}
+                    </div>
+                </section>
             </div>
         </main>
     </div>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback — Smart Music App</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <script src="{% static 'js/theme.js' %}"></script>
+    <style>
+        .feedback-card {
+            background: var(--card-bg, rgba(255,255,255,0.05));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+        }
+        .feedback-card h2 {
+            margin: 0 0 1.5rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            font-size: 0.85rem;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            color: inherit;
+            font-size: 0.95rem;
+            padding: 0.6rem 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+            font-family: inherit;
+        }
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: rgba(255,255,255,0.35);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .btn-submit {
+            background: #1db954;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.7rem 1.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .btn-submit:hover { opacity: 0.85; }
+        .messages { margin-bottom: 1rem; }
+        .messages li {
+            list-style: none;
+            padding: 0.6rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        .messages li.success { background: rgba(29,185,84,0.15); color: #1db954; }
+        .messages li.error   { background: rgba(255,65,54,0.15);  color: #ff4136; }
+    </style>
+</head>
+<body>
+
+    <!-- Background decorations -->
+    <div class="vinyl-ring"></div>
+    <div class="vinyl-ring"></div>
+
+    <div class="app-shell">
+
+        <!-- ── Sidebar Nav ─────────────────────────────────── -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-mark"></span>
+                <span class="logo-text">SMA</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'generate' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Generate</span>
+                </a>
+                <a href="{% url 'playlists' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                    <span>My Playlists</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    <span>Analytics</span>
+                </a>
+                <a href="{% url 'feedback' %}" class="nav-item active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span>Feedback</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="{% url 'profile' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Profile</span>
+                </a>
+                <form method="post" action="{% url 'spotify_logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-item nav-logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Logout</span>
+                    </button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- ── Main Content ─────────────────────────────────── -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-greeting">
+                    <p class="topbar-eyebrow">Help us improve</p>
+                    <h1 class="topbar-title">Feedback</h1>
+                </div>
+            </header>
+
+            <div class="feedback-card">
+                <h2>Submit Feedback</h2>
+
+                {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                    <li class="{{ message.tags }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- ── Subject ─────────────────────────────────── -->
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <select name="subject" id="subject" required>
+                            <option value="" disabled selected>Select a subject</option>
+                            <option value="bug">Bug Report</option>
+                            <option value="suggestion">Suggestion</option>
+                            <option value="comment">Comment</option>
+                        </select>
+                    </div>
+
+                    <!-- ── Topic ─────────────────────────────────── -->
+                    <div class="form-group">
+                        <label for="topic">Topic</label>
+                        <input type="text" name="topic" id="topic" placeholder="Brief topic or title" required maxlength="255">
+                    </div>
+
+                    <!-- ── Description ─────────────────────────────────── -->
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea name="description" id="description" placeholder="Describe your feedback in detail..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit">Submit</button>
+                </form>
+            </div>
+        </main>
+
+    </div>
+</body>
+</html>

@@ -8,6 +8,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
+from django.db.models import Count, Sum
+from django.contrib.auth.decorators import user_passes_test
 
 # Importing our own models and utility functions
 from users.models import User
@@ -679,3 +681,135 @@ def analytics_page(request):
         "spotify_linked":       listening["spotify_linked"],
         "needs_reauth":         listening["needs_reauth"],
     })
+
+def user_is_manager_or_admin(user):
+    """
+    Returns True when the authenticated user has elevated app permissions.
+    Keeps the role check in one place so it is easy to expand later.
+    """
+    if not user.is_authenticated:
+        return False
+    return getattr(user, "role", "user") in ["manager", "admin"]
+
+
+def user_is_admin(user):
+    """
+    Strict admin-only access check.
+    Use this for pages that should not be visible to regular users or managers.
+    """
+    if not user.is_authenticated:
+        return False
+    return getattr(user, "role", "user") == "admin"
+
+
+def get_recent_platform_activity(limit=8):
+    """
+    Fetches the most recent playlists created across the whole platform.
+    Returned as a queryset sliced to the requested limit.
+    """
+    return (
+        Playlist.objects.select_related("user")
+        .order_by("-created_at")[:limit]
+    )
+
+
+def get_most_active_users(limit=6):
+    """
+    Returns users ordered by playlist count and then username.
+    This powers the 'most active users' panel on the admin dashboard.
+    """
+    return (
+        User.objects.annotate(
+            playlist_total=Count("playlists")
+        )
+        .order_by("-playlist_total", "username")[:limit]
+    )
+
+
+def get_user_role_breakdown():
+    """
+    Returns a simple role distribution for display cards and tables.
+    Handles empty datasets safely.
+    """
+    role_counts = Counter(
+        User.objects.values_list("role", flat=True)
+    )
+
+    return {
+        "admin_count": role_counts.get("admin", 0),
+        "manager_count": role_counts.get("manager", 0),
+        "user_count": role_counts.get("user", 0),
+    }
+
+
+def get_playlist_visibility_breakdown():
+    """
+    Returns counts for public/private playlists across the full platform.
+    Also includes percentages for visualization.
+    """
+    total_playlists = Playlist.objects.count()
+    public_count = Playlist.objects.filter(visibility="public").count()
+    private_count = total_playlists - public_count
+
+    public_pct = round((public_count / total_playlists) * 100) if total_playlists else 0
+    private_pct = 100 - public_pct if total_playlists else 0
+
+    return {
+        "public_count": public_count,
+        "private_count": private_count,
+        "public_pct": public_pct,
+        "private_pct": private_pct,
+    }
+
+
+def get_platform_mood_breakdown():
+    """
+    Returns mood usage across all playlists in the platform.
+    Format matches your existing analytics bar chart style.
+    """
+    mood_counts = Counter(
+        Playlist.objects.exclude(mood="").values_list("mood", flat=True)
+    )
+
+    max_count = max(mood_counts.values(), default=1)
+
+    return [
+        {
+            "label": label,
+            "count": count,
+            "pct": round((count / max_count) * 100) if max_count else 0,
+            "color": MOOD_COLORS.get(label, _DEFAULT_COLOR),
+        }
+        for label, count in mood_counts.most_common()
+    ]
+
+
+def get_platform_genre_breakdown(limit=8):
+    """
+    Returns the most common genres across all generated playlists.
+    This is intentionally separate from user analytics so the admin page
+    can show platform-wide content trends.
+    """
+    genre_counts = Counter(
+        Playlist.objects.exclude(genre="").values_list("genre", flat=True)
+    )
+
+    max_count = max(genre_counts.values(), default=1)
+
+    return [
+        {
+            "label": label,
+            "count": count,
+            "pct": round((count / max_count) * 100) if max_count else 0,
+        }
+        for label, count in genre_counts.most_common(limit)
+    ]
+
+
+def get_newest_users(limit=8):
+    """
+    Returns the newest registered users for the admin dashboard.
+    Assumes the custom user model inherits AbstractUser and therefore
+    includes a date_joined field.
+    """
+    return User.objects.order_by("-date_joined")[:limit]

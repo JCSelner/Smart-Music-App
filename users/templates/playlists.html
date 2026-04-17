@@ -59,6 +59,15 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     <span>Analytics</span>
                 </a>
+                {% if is_admin_user %}
+                <a href="{% url 'admin_dashboard' %}" class="nav-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l7 4v6c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-4z"/>
+                        <path d="M9.5 12l1.5 1.5 3.5-3.5"/>
+                    </svg>
+                    <span>Admin</span>
+                </a>
+                {% endif %}
             </nav>
         
             <div class="sidebar-footer">

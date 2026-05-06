@@ -243,6 +243,7 @@
                                         type="text"
                                         name="location"
                                         id="location"
+                                        value="{{ saved_location }}"
                                         placeholder="{{ weather_location }}"
                                         class="has-icon"
                                         autocomplete="off"
@@ -432,6 +433,7 @@
         });
     </script>
 
-    <script src="{% static 'js/weather.js' %}?v=20260318-geoapify"></script>
+    <input type="hidden" id="saved_location" value="{{ saved_location }}">
+    <script src="{% static 'js/weather.js' %}?v=20260506-savedloc"></script>
 </body>
 </html>

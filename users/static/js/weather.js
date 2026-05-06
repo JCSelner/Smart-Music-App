@@ -127,6 +127,16 @@ function loadWeather() {
     var weatherToggle = document.getElementById("use_weather");
     if (weatherToggle && !weatherToggle.checked) return;
 
+    // Use saved location if available — no prompt needed
+    var savedLocation = document.getElementById("saved_location");
+    if (savedLocation && savedLocation.value.trim()) {
+        fetch("/api/weather/?city=" + encodeURIComponent(savedLocation.value.trim()))
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+            .then(function(data) { if (data && !data.error) setWeatherUI(data); })
+            .catch(function() {});
+        return;
+    }
+
     // Don't re-prompt if the user already denied this session
     if (sessionStorage.getItem("geo_denied") === "1") return;
 
@@ -209,6 +219,8 @@ function initLocationAutocomplete() {
         if (latInput) latInput.value = String(item.lat);
         if (lonInput) lonInput.value = String(item.lon);
         clearSuggestions();
+
+        if (!document.querySelector(".weather-icon")) return;
 
         fetch("/api/weather/?lat=" + encodeURIComponent(item.lat) + "&lon=" + encodeURIComponent(item.lon))
             .then(function(r) {

@@ -155,6 +155,7 @@ def dashboard(request):
         "weather_location": "—",
         "weather_mood": "—",
         "recent_playlists": recent_playlists,
+        "saved_location": request.user.location,
         "is_admin_user": user_is_admin(request.user),
         "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
@@ -232,6 +233,7 @@ def generate_page(request):
         "weather_temp": "—",
         "weather_location": "Enter city",
         "activities": [],
+        "saved_location": request.user.location,
         "is_admin_user": user_is_admin(request.user),
         "is_manager_or_admin": user_is_manager_or_admin(request.user),
     })
@@ -307,12 +309,21 @@ def profile_page(request):
     user = request.user
     spotify_linked = SpotifyToken.objects.filter(user=request.user).exists()
     display_name = user.display_name or user.username
+
+    if request.method == "POST":
+        location = request.POST.get("location", "").strip()
+        user.location = location
+        user.save(update_fields=["location"])
+        messages.success(request, "Location updated.")
+        return redirect("profile")
+
     return render(request, "profile.html", {
         "display_name": display_name,
         "spotify_linked": spotify_linked,
         "email": user.email,
         "username": user.username,
         "role": getattr(user, "role", "user"),
+        "location": user.location,
         "spotify_connect_url": reverse("spotify_login"),
         "spotify_disconnect_url": reverse("spotify_logout"),
         "password_change_url": reverse("password_change"),

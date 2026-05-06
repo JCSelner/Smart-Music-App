@@ -127,40 +127,52 @@ function loadWeather() {
     var weatherToggle = document.getElementById("use_weather");
     if (weatherToggle && !weatherToggle.checked) return;
 
-    navigator.geolocation.getCurrentPosition(function(pos) {
-        var lat = pos.coords.latitude;
-        var lon = pos.coords.longitude;
+    // Don't re-prompt if the user already denied this session
+    if (sessionStorage.getItem("geo_denied") === "1") return;
 
-        var latInput = document.getElementById("lat");
-        var lonInput = document.getElementById("lon");
-        if (latInput) latInput.value = String(lat);
-        if (lonInput) lonInput.value = String(lon);
+    function onDenied() {
+        sessionStorage.setItem("geo_denied", "1");
+    }
 
-        fetch("/api/weather/?lat=" + lat + "&lon=" + lon)
-            .then(function(r) {
-                if (!r.ok) throw new Error("Weather API failed");
-                return r.json();
-            })
-            .then(function(data) {
-                if (!data || data.error) throw new Error("Weather payload invalid");
-                setWeatherUI(data);
-            })
-            .catch(function() {});
-    }, function() {
-        var city = prompt("Enter city:");
-        if (!city) return;
+    function requestLocation() {
+        navigator.geolocation.getCurrentPosition(function(pos) {
+            var lat = pos.coords.latitude;
+            var lon = pos.coords.longitude;
 
-        fetch("/api/weather/?city=" + encodeURIComponent(city))
-            .then(function(r) {
-                if (!r.ok) throw new Error("Weather API failed");
-                return r.json();
-            })
-            .then(function(data) {
-                if (!data || data.error) throw new Error("Weather payload invalid");
-                setWeatherUI(data);
-            })
-            .catch(function() {});
-    });
+            var latInput = document.getElementById("lat");
+            var lonInput = document.getElementById("lon");
+            if (latInput) latInput.value = String(lat);
+            if (lonInput) lonInput.value = String(lon);
+
+            fetch("/api/weather/?lat=" + lat + "&lon=" + lon)
+                .then(function(r) {
+                    if (!r.ok) throw new Error("Weather API failed");
+                    return r.json();
+                })
+                .then(function(data) {
+                    if (!data || data.error) throw new Error("Weather payload invalid");
+                    setWeatherUI(data);
+                })
+                .catch(function() {});
+        }, function() {
+            onDenied();
+        });
+    }
+
+    // Check permission state first — skip prompt entirely if already denied
+    if (navigator.permissions) {
+        navigator.permissions.query({ name: "geolocation" }).then(function(result) {
+            if (result.state === "denied") {
+                onDenied();
+                return;
+            }
+            requestLocation();
+        }).catch(function() {
+            requestLocation();
+        });
+    } else {
+        requestLocation();
+    }
 }
 
 function initLocationAutocomplete() {

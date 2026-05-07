@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
     <link rel="stylesheet" href="{% static 'css/profile.css' %}">
     <script src="{% static 'js/theme.js' %}"></script>
+    <script src="{% static 'js/weather.js' %}"></script>
 </head>
 <body>
 <!-- ── Profile Page ───────────────────────────────────
@@ -142,6 +143,26 @@
                             <span class="profile-value">{{ role }}</span>
                         </div>
                     </div>
+                <!-- ── Default location for weather ─────────────────────────── -->
+                    <form method="post" class="profile-location-form">
+                        {% csrf_token %}
+                        <div class="profile-item">
+                            <span class="profile-label">Default Location</span>
+                            <div style="position:relative;">
+                                <input
+                                    type="text"
+                                    name="location"
+                                    id="location"
+                                    value="{{ location }}"
+                                    placeholder="Enter your city"
+                                    autocomplete="off"
+                                    class="profile-location-input"
+                                >
+                                <div id="locationSuggestions" class="location-suggestions" role="listbox"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="roundedButton profile-button">Save Location</button>
+                    </form>
                 <!-- ── Link to password change ─────────────────────────── -->
                     <a href="{{ password_change_url }}" class="roundedButton profile-button">
                         Change Password
